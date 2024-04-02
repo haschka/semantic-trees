@@ -3,6 +3,10 @@
 #include<unistd.h>
 #include<sys/types.h>
 
+#if defined (_YULE_DISTANCE)
+#include"binary_array.h"
+#endif
+
 #include"dataset.h"
 
 data_shape shape_from_embeddings_file(int infile) {

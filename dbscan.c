@@ -125,7 +125,7 @@ static inline neighbors region_query(int point, float epsilon, dataset ds) {
 #if defined (_COS_DISTANCE)
     distance = cos_distance(a_point, b_point, ds.n_dimensions);
 #elif defined (_YULE_DISTANCE)
-    distance = yule_distance(a_point, b_point, ds.n_dimensions);
+    distance = Yule_distance(a_point, b_point, ds.n_dimensions);
 #endif
   }
   
