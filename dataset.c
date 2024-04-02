@@ -62,14 +62,14 @@ dataset load_embeddings_from_file_into_dataset(FILE* in_file,
   ds.n_values = shape.n_samples;
 
 #if defined(_COS_DISTANCE)
-  ds.values = (double**)malloc(sizeof(double*)*ds.n_dimensions);
+  ds.values = (double**)malloc(sizeof(double*)*ds.n_values);
 
   for(i = 0 ; i < ds.n_values; i++) {
     ds.values[i] =
       (double*)malloc(sizeof(double)*ds.n_dimensions);
   }
 #elif defined(_YULE_DISTANCE)
-  ds.values = (char**)malloc(sizeof(char*)*ds.n_dimensions);
+  ds.values = (char**)malloc(sizeof(char*)*ds.n_values);
 
   for(i = 0 ; i < ds.n_values; i++) {
     ds.values[i] =

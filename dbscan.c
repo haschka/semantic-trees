@@ -116,7 +116,8 @@ static inline neighbors region_query(int point, float epsilon, dataset ds) {
 #endif
   
   a_point = ds.values[point];
-  
+
+  nb.members = (int*)malloc(sizeof(int)*ds.n_values);
   nb.n_members = 0;
   for(i=0;i<ds.n_values;i++) {
 
@@ -127,12 +128,12 @@ static inline neighbors region_query(int point, float epsilon, dataset ds) {
 #elif defined (_YULE_DISTANCE)
     distance = Yule_distance(a_point, b_point, ds.n_dimensions);
 #endif
+    if(distance <= epsilon) {
+      nb.members[nb.n_members]=i;
+      nb.n_members++;
+    }
   }
   
-  if(distance <= epsilon) {
-    nb.members[nb.n_members]=i;
-    nb.n_members++;
-  }
   return(nb);
 }
     
