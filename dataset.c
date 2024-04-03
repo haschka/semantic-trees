@@ -42,6 +42,7 @@ data_shape shape_from_embeddings_file(int infile) {
     if ( f_buffer[i] == '\n' ) s.n_samples++;
     i++;
   }
+  s.n_features--;
   return(s);
 }
 

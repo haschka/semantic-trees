@@ -100,6 +100,12 @@ static inline double cos_distance(double* a, double* b, size_t length) {
   return(1-(sum_ab/(sqrt(sum_a)*sqrt(sum_b))));
 }
 
+static inline int compare(const void* a , const void* b) {
+  int na = *(int*)a;
+  int nb = *(int*)b;
+  return (na-nb);
+}
+
 static inline neighbors region_query(int point, float epsilon, dataset ds) {
 
   int i,j,k;
@@ -133,7 +139,7 @@ static inline neighbors region_query(int point, float epsilon, dataset ds) {
       nb.n_members++;
     }
   }
-  
+  qsort(nb.members,nb.n_members,sizeof(int),compare);
   return(nb);
 }
     
@@ -206,7 +212,7 @@ static inline void expand_cluster(int point,
 	    merge[merge_counter] = right;
 	    merge_counter++;
 	    n_right++;
-	  }
+	  } 
 	  if( right == left ) {
 	    merge[merge_counter] = left;
 	    n_left++;
@@ -214,7 +220,7 @@ static inline void expand_cluster(int point,
 	    merge_counter++;
 	    right_in_left[n_right_in_left] = left;
 	    n_right_in_left++;
-	  }
+	  } 
 	}
 	if(n_left != nb.n_members || n_right != nb_of_nb.n_members) {
 	  if(n_left == nb.n_members) { /* Hit the left wall */
@@ -259,8 +265,9 @@ static inline void expand_cluster(int point,
 	free(right_in_left);
 	free(nb_of_nb.members);
 	nb_unsorted.n_members = merge_counter;
-
-	  } else {
+	memcpy(nb.members,merge,sizeof(int)*merge_counter);
+	nb.n_members = merge_counter;
+      } else {
 	free(nb_of_nb.members);
       }
     }
@@ -446,6 +453,16 @@ void adaptive_dbscan(split_set (*dbscanner) (dataset,
 
   initial_counter = 0;
   while( set_of_split_sets[0].n_clusters == 1 ) {
+    not_covered = data_not_in_clusters(set_of_split_sets[0], ds);
+
+    if(not_covered.n_members > 0) {
+      free(not_covered.members);
+    }
+
+    printf("Coverage at initial point: %f\n",
+	   (float)1.f-(float)not_covered.n_members/(float)ds.n_values);
+
+
     if (initial_counter == 20 || epsilon_start == 0) {
       printf("Error did not find a sufficient" 
 	     " starting position in 20 tries \n");
