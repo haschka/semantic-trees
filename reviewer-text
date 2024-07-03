@@ -1,0 +1,108 @@
+Independent Review Report, Reviewer 2
+EVALUATION
+Please list your revision requests for the authors and provide your detailed comments, including highlighting limitations and strengths of the study and evaluating the validity of the new method, results, and data interpretation. If you have additional comments based on Q2 and Q3 you can add them as well.
+Journal: Frontiers in Molecular Biosciences, section Biological Modeling and Simulation
+Manuscript ID: 1440529
+Type of manuscript: Article
+Title: Innovative Tree-Based Method for Sampling Molecular Conformations: Exploring the ATP-Binding Cassette Subfamily D Member 1 (ABCD1) Transporter as a Case Study
+Authors: Thomas Haschka, Foudil Lamari, Fanny Mochel, Violetta Zujovic
+Received: 29 May 2024
+Corresponding Author: Violetta Zujovic
+
+Summary:
+
+In this work, Haschka and colleagues describe a tree-based algorithm to cluster molecular conformations observed during MD simulations, applying their approach to characterize the behavior of the ATP-binding cassette subfamily D member 1 (ABCD1) transporter protein. This transporter is responsible for the transfer of long-chain fatty acids from the cytosol into the peroxisome, where they undergo oxidation. Mutations in this protein, which prevent proper lipid transport, are implicated in X-linked adrenoleukodystrophy (XALD), a hereditary genetic disorder and prevalent peroxisomal disease that affects both the nervous system and the adrenal glands. This disease manifests in both organs, with children exhibiting childhood cerebral adrenoleukodystrophy (C-CALD) and possibly experiencing adrenomyeloneuropathy (AMN) in adulthood. Adult men with AMN may also conversely be diagnosed with adult-onset CALD (A-CALD). The authors examine the dynamics of both the inwardly (peroxisome) and outwardly (cytosol) facing states of this transporter for the wild-type protein, and for 16 mutations in ABCD1 that are observed in a reference patient population. From their simulations, the authors analyze the interaction energy associated with ATP binding to the transporter, and they use their tree-based clustering method to characterize conformational substates observed during the simulations. By cross-referencing these substates with the mutations observed in specific disease phenotypes, the authors attempt to establish structure-function relationships that will provide additional insight into the XALD disease and provide a basis for development of therapeutic interventions.
+
+While the premise of the study is intriguing, and the figures generally well-made, the analysis of the data seems rushed, and does not adequately consider the structural or mechanistic implications arising from the simulation data. Moreover, the introduction is missing basic details about the system being investigated. It is not clear if this is a result of a general lack of functional understanding of the ABCD1 transporter in the field, or simply a consequence of the authors focusing more on the results of their tree-based clustering rather than interpreting the observed dynamics of residues in the protein in the context of the structure and function of ABCD1. On this note, while the authors place great emphasis on the novelty of their tree-based algorithm, and encourage its widespread use in MD simulations, they do not provide sufficient detail to understand how it is practically implemented, how it differs from existing methods, how to obtain structural representatives of the clusters, or even how to quantitatively interpret the results of their tree output from the color intensities. Namely, the connection between the tree-based output and a quantitative characterization of the populations of different conformational substates observed in the simulation is not properly elaborated in the text, nor is it described in the figure legends. The presentation of these aspects needs to be improved for readers to gain a greater appreciation for the utility of this analytical approach.
+
+Scientific Comments:
+
+1. Page 2, line 32: The reference for the statement that 50% of AMN men will also develop CALD is missing in the text. In general, the introduction fails to properly discuss the connection between XALD and the diagnoses of CCALD, AMN, and ACALD, with only 4 lines of text (page 2, lines 29-33) dedicated to mentioning the phenotypic implications. Discussions of the molecular consequences that manifest in XALD disease, the domain architecture of ABCD1, residues that comprise the ATP-binding sites, or even the fact that ABCD1 transports long-chain fatty acids, are missing from the introduction. This makes it very difficult to grasp the significance of the disease or its underlying mechanistic basis, unless the reader consults other literature on this topic. While it is understandable that the authors are focused on their tree-based algorithm and consider the specific case study to be secondary, the authors need to revise their introduction to provide further context and basic mechanistic details that would allow readers to grasp the significance of XALD and its connection to ABCD1.
+
+2. Page 3, lines 76-77: Although the authors examine an impressive number of mutations (16 each for the peroxisome-facing and cytosol-facing states), the simulation time for each of the mutated structures and wild-type protein configurations was only 100 ns (following 30 ns of equilibration), which is not nearly long enough to ascertain anything about the stability of the complex, especially one consisting of such a large number of residues (~700) and a lipid bilayer. How did the authors determine that the properties of the ensemble (e.g., the RMSF plots shown in Figures 5 and 6, and the interaction energies shown in Figure 7) were properly sampled? The authors need to conduct more extensive molecular dynamics sampling on the order of 1-2 microseconds, either through running longer simulations or running more short replica simulations in parallel (e.g., 10 x 100 ns, 20 x 50 ns), and report whether the results change upon this more extensive sampling. This is especially critical as it relates to the tree-building algorithm that the authors implemented in this paper: in the absence of proper sampling, the “densities” of different clusters in the energetic landscape identified by DBSCAN (i.e., the populations of conformational substates) will not be representative of the true densities that would be expected under a proper exploration of the energetic landscape under equilibrium sampling. This would, in turn, affect the tree-building process and the downstream correlation of conformational substates to disease progression types, impacting the tree visualizations in Figures 9 – 11.
+
+3. Related to Question 2: The authors mention on page 3, lines 104-105, that “…six 100 ns simulations were conducted for the wild type configuration from different equilibrations, as outlined above.” However, the authors mention that “four different simulations were run for this configuration” (page 3, lines 99-100). Should this not then correspond to 8 total simulations of the wild-type protein (four cytosol-facing and four peroxisome-facing)? This is what is mentioned on page 4, lines 106-107. The authors should either revise this confusing sentence on page 3, lines 104-105, or remove it for clarity.
+
+4. How were the values used for the parameters shown in Table 2 determined? If there was a “scanning” of parameter space, what were the bounds of this scan? This is unclear from the description provided in Section 2.6 and needs to be explained in greater detail.
+
+5. How did the authors decide to retain 10 eigenvalues from the PCA analysis? What was the cumulative variance captured by the first 10 PCs for the trajectories? Could a smaller number of dimensions have been retained without loss of information? This needs to be clarified by the authors.
+
+6. On page 5, lines 182 – 185, the authors mention that E609K and R660W were found to “result in the formation of unstable proteins in-vivo, as reported by colleagues”. What was the method used to determine protein stability for the mutations listed in Table 1? This method is missing from the Methods section of the manuscript. Generally, Table 1 represents a great opportunity to connect the data from molecular simulations to the observed activity of the ABCD1 transporter, possibly by examining the structural context of the listed mutations and interpreting the conformational dynamics of these systems in relation to their observed effects on protein stability and transport behavior. The authors attempt to do this on page 5-6, lines 186-189, for the Y296H mutation, and on page 6, lines 198-200. The authors should add a few additional instances of such analysis to their results section.
+
+7. Related to the previous question 6: In Figure 5, the authors show that several mutations result in increased fluctuations of residues distal from the mutation site, often in Chain B but not Chain A (e.g. W339G – AMN, E302Q – AMN, Y181S – CCALD), or vice versa (e.g. R189W – ACALD, R591W – AMN). Could the authors discuss why these fluctuations appear to be asymmetric, and what impact this may have on ABCD1 dynamics? Is there any known role of allostery in the ABCD1 transporter?
+
+8. Throughout the paper, the authors make a point to emphasize the novelty and utility of their tree-based approach to cluster conformational substates observed during their simulations. However, they neglect to compare or otherwise differentiate their approach relative to other well-established clustering algorithms in the field, e.g., those provided by the scikit-learn package in Python, which includes the DBSCAN algorithm that the authors employ as an initial step. How do the parameters minpts and εinit differ from eps and min_samples in DBSCAN? The authors mention in their conclusion (page 8, lines 295-296) that their approach presents “a distinct advantage over conventional methods like PCA”, yet they employ PCA to establish the initial subspace upon which to implement their tree-based algorithm. Could the authors comment on how their tree-based clustering approach differs from an approach like mean-shift clustering, which has the notion of iteratively updating the position of the centroid of a cluster based on a “hill-climbing” algorithm that identifies local maxima in probability densities, and utilizes a local neighborhood of points?
+
+9. The authors describe throughout their paper mutations associated with CCALD, AMN, and ACALD disease phenotypes, but they do not mention if these mutations are specific to only their patients or are representative of a set of well-established mutations that are characteristic of the different disease progressions. Is there any information known about why different residues in ABCD1 are mutated in different stages of the disease?
+
+10. On page 4, lines 135-136, it is mentioned that “residues involved in the VLFCA transport from the cytosol outward configuration were selected”. This implies that there is at least some knowledge of residues that interact with the lipid substrate during transport activity, and indeed there is an available cryo-EM structure, PDB: 7VZB, that contains two bound C22 lipid molecules. If there is knowledge about the binding site of the lipid substrate in ABCD1, why were lipids not modeled in the simulations to examine the behavior of the transporter in the context of the substrate? What is the prediction of the authors regarding the presence of lipids on the dynamics of the transporter, and the conformational substates sampled therein?
+
+11. How were the tree-view dendrograms presented in Figures 9 and 10 colored? What was the process used to identify the specific simulations corresponding to the different disease progressions comprising the clusters in 10-dimensional PCA space? How should one interpret these dendrograms in terms of the populations of each substate and the mutations associated with each cluster branch in the tree? It is mentioned in the figure legend of Figure 9 that colors are logarithmically related to the number of conformations, but no scale bars or quantitation is provided. This is also unclear from the main text, and it is assumed that the reader understands how to interpret these figures. Further explanation of the process used to create and interpret these dendrograms is needed.
+
+12. On page 8, lines 273-283, the authors discuss how they correlate cell-based lipid data to the dendrogram that they generated in Figure 9. How can the authors be sure that their phenotypic observation of relative lipid concentrations is correlated specifically to the mutations that they simulated in ABCD1, and is not simply a result of some other cellular behavior that is unrelated to ABCD1? Is there any way to more specifically quantitate the degree of correlation that they observe, or some way to structurally examine the feasibility of placing specific long-chain lipids into the binding pocket for the specific conformational substates of ABCD1 that are identified through clustering (e.g., by using docking)?
+
+As a methodological suggestion, instead of having to duplicate the simulation runs for the inwardly (peroxisome) and outwardly (cytosol)-facing states of the wild-type and mutated ABCD1 proteins, would it not have been more computationally expedient to start with the single structures and then use enhanced sampling (e.g., umbrella sampling), or a “string method” based implementation which would permit an examination of the conformational transitions between the two states? These types of simulations are parallelizable and would provide a much more accurate examination of the energetic landscape characterizing the behavior of the ABCD1 transporter. It would be intriguing to then see how the tree-based algorithm characterizes the conformational substates of the transporter.
+
+Figure and Table Comments:
+
+1. Table 1: The legend for the table has several misspellings (“oultine, “exherts”, “weather”, “structre”) that need to be revised. “Oxidation” is misspelled in the table heading (“Oxydation”).
+
+2. Table 2: The table rows misspell “peroxisome”. The table legend has a typographic error (“subspace spun by…”) which should be revised to “subspace spanned by…”.
+
+3. Figure 1: The figure legend is missing a period at the end of the sentence.
+
+4. Figure 2: The figure legend has two typographic errors in the first sentence, and does not correspond to the figure (i.e., there are no orange positions shown in the figure). This figure legend needs to be revised.
+
+5. Figures 3 and 4: These figures seem redundant, as the same structural information is shown, and the figure legends appear to be identical. One of them can likely be removed without loss of understanding. Also, the authors do not mention the visualization software used to create these structural images. This should be mentioned in the Methods section. Would it be possible for the authors to denote the location of the membrane relative to the orientations of the protein shown in the figures? In both figure legends, “Van der Waals spheres” should be written as “van der Waals spheres”.
+
+6. Figures 5 and 6: The bottom-most righthand arrow in the figure notes the last set of mutations (E609K, R617H, R660W, Y181S, and Y296H) as “ALD”. However, in other figures, these mutations are part of the “CCALD” phenotype. Please update the arrow labels.
+
+7. Figure 7: As in Figures 5 and 6, the last arrow at the bottom says “ALD” instead of “CCALD”. Please update the label.
+
+8. Figure 8: The word “Component” is misspelled on both axes of this figure and needs to be corrected.
+
+9. Figure 9: There is a typo in the figure legend: “The intensity of the color is logarithmically expresses…”. The word “is” should be removed from this sentence. The scale bar for the logarithmic values mentioned is not shown, making it difficult to understand the color intensity progression.
+
+10. Figure 10: The bottom arrows say “ALD” instead of “CCALD”. Please update the label. The figure legend should more descriptively mention how to interpret these tree views.
+
+11. On page 8, lines 276 – 277, the authors state: “...we created three colored trees based on the terciles observed in our patients’ data, as depicted in Figure 11.” However, Figure 11 only contains two colored trees. This should be corrected in the text.
+
+12. Figure 12: Could the authors provide the RMSD between the structures comprising the J and K branches? What are the relative populations of these two conformational substates?
+
+
+Other Minor Comments:
+
+Page 1, line 16 – Abstract: “We categorized XADL patients…”. It seems that this is a typographic error, and should be revised to “We categorized XALD patients…”.
+
+Page 2, line 25: “Our study resolves…”. This should be revised to “Our study revolves…”.
+
+Page 2, line 29: “The patients phenotypic variability is ranging from…”. This should be revised to “The patients’ phenotypic variability ranges from a…”.
+
+Page 2, lines 31-33: “Over the past decade, it appeared…”. This should be revised to “Over the past decade, it appears that the majority of AMN men – 50% over 10 years (1) – will also develop CALD later in life (A-CALD), with the same grim prognosis as children.” Please add the citation for this data, as mentioned in the comments above.
+
+Page 3, line 67: “this alighment”. This should be revised to “this alignment”.
+
+Check List
+a. Is the quality of the figures and tables satisfactory?
+Yes
+b. Does the reference list cover the relevant literature adequately and in an unbiased manner?
+No
+c. Are the statistical methods valid and correctly applied? (e.g. sample size, choice of test)
+Yes
+d. Is a statistician required to evaluate this study?
+No
+e. Are the methods sufficiently documented to allow replication studies?
+No
+f. Are limits of detection or quantification adequately described?
+Yes
+QUALITY ASSESSMENT:
+Rigor
+3
+Quality of the writing
+3
+Overall quality of the content
+3
+Interest to a general audience
+4
+
+If you encounter any technical issue, contact support@frontiersin.org, with VpQEWERUSY1I9D8 as reference.
