@@ -1,3 +1,6 @@
+char* generate_server_query(char* user_query,
+			    int n_tokens);
+
 size_t write_function_callback(char* in_data,
 			       size_t size,
 			       size_t nmemb,

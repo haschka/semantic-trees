@@ -8,7 +8,7 @@
 #include<sys/stat.h>
 #include<fcntl.h>
 
-#include"dataset.h"
+#include"vector-db.h"
 #include"cluster.h"
 #include"dbscan.h"
 
@@ -20,7 +20,7 @@ void file_error(char* path) {
 void print_arguments() {
 
   printf("Arguments are: \n"
-	 "   [file] Embeddings File\n"
+	 "   [file] Vector Database File\n"
 	 "   (float) initial epsilon value \n"
 	 "   (float) epsilon increase between cluster search \n"
 	 "   (int) minimum numbers of clusters in epsilon neigbourhood \n"
@@ -33,15 +33,10 @@ int main(int argc, char** argv) {
 
   int i,j,k;
   
-  dataset ds;
+  database vdb;
 
   float epsilon;
   int minpts;
-
-  int embeddings_fd;
-  FILE* embeddings_f;
-
-  data_shape shape;
 
   char split_files_prefix[255];
 
@@ -60,18 +55,11 @@ int main(int argc, char** argv) {
   sscanf(argv[5], "%s", split_files_prefix);
   sscanf(argv[6], "%i", &n_threads);
 
-  if ( -1 == (embeddings_fd = open(argv[1], O_RDONLY))) file_error(argv[1]);
+  vdb = read_db_from_disk(argv[1]);
 
-  shape = shape_from_embeddings_file(embeddings_fd);
-  embeddings_f = fdopen(embeddings_fd,"r");
-  ds = load_embeddings_from_file_into_dataset(embeddings_f,shape);
-  fclose(embeddings_f);
+  printf("Vector Database read!\n");
 
-  printf("Dataset read!\n");
-
-  adaptive_dbscan(dbscan, ds, epsilon_start, epsilon_inc, minpts,
+  adaptive_dbscan(dbscan, vdb, epsilon_start, epsilon_inc, minpts,
 		  split_files_prefix, n_threads);
 
- finish:
-  free_dataset(ds);
 }

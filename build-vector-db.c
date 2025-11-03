@@ -1,6 +1,11 @@
 #include<stdio.h>
 #include<string.h>
 #include<malloc.h>
+#include<math.h>
+#if defined(__AVX2__)
+#include<immintrin.h>
+#endif
+
 #include "vector-db.h"
 #include "wordlist.h"
 #include "load-texts.h"
@@ -42,10 +47,10 @@ int main(int argc, char** argv) {
   
   sscanf(argv[4],"%li",&slices_lengths);
   
-  text_slices = cut_texts_in_subtexts(main_text,
-				      strlen(main_text),
-				      slices_lengths,
-				      &n_slices);
+  text_slices = cut_texts_in_subtexts_with_overlap(main_text,
+						   strlen(main_text),
+						   slices_lengths,
+						   &n_slices);
 
   
   wl = (wordlist*)malloc(sizeof(wordlist)*n_slices);
@@ -66,10 +71,10 @@ int main(int argc, char** argv) {
   }
   free(text_slices);
   
-  text_slices = cut_texts_in_subtexts(main_text,
-				      strlen(main_text),
-				      slices_lengths,
-				      &n_slices);
+  text_slices = cut_texts_in_subtexts_with_overlap(main_text,
+						   strlen(main_text),
+						   slices_lengths,
+						   &n_slices);
 
   vdb.vector = embeddings;
   vdb.text = text_slices;

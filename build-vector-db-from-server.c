@@ -44,10 +44,10 @@ int main(int argc, char** argv) {
 
   main_text = buffer[0];
 
-  text_slices = cut_texts_in_subtexts(main_text,
-				      strlen(main_text),
-				      slices_lengths,
-				      &n_slices);
+  text_slices = cut_texts_in_subtexts_with_overlap(main_text,
+						   strlen(main_text),
+						   slices_lengths,
+						   &n_slices);
 
   embeddings = (char**)malloc(sizeof(char*)*n_slices);
   

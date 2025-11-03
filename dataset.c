@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
+#include<string.h>
 #include<sys/types.h>
 
 #if defined (_YULE_DISTANCE)
@@ -52,32 +53,37 @@ dataset load_embeddings_from_file_into_dataset(FILE* in_file,
   dataset ds;
   int i, j;
 
-#if defined(_YULE_DISTANCE)
-  int bin_buffer;
-#endif
+  size_t write_vector_length;
   
   char buffer[1024];
 
+#if defined(_YULE_DISTANCE)
+  char** current_position;
+  int bin_buffer;
+#elif defined(_COS_DISTANCE)
+  double** current_position;
+#endif
+  
   ds.n_dimensions = shape.n_features;
 
   ds.n_values = shape.n_samples;
 
 #if defined(_COS_DISTANCE)
+  write_vector_length = sizeof(double)*ds.n_dimensions;
   ds.values = (double**)malloc(sizeof(double*)*ds.n_values);
-
-  for(i = 0 ; i < ds.n_values; i++) {
-    ds.values[i] =
-      (double*)malloc(sizeof(double)*ds.n_dimensions);
-  }
 #elif defined(_YULE_DISTANCE)
+  write_vector_length = ds.n_dimensions/8+1;
   ds.values = (char**)malloc(sizeof(char*)*ds.n_values);
+#endif
 
   for(i = 0 ; i < ds.n_values; i++) {
-    ds.values[i] =
-      alloc_and_set_zero_binary_array(ds.n_dimensions);
+    current_position = ds.values+i;
+    posix_memalign((void**)current_position,
+		   (size_t)32,
+		   write_vector_length+32-write_vector_length%32);
+    memset(ds.values[i],0,write_vector_length+32-write_vector_length%32);
   }
-#endif
-  
+
   rewind(in_file);
   
   for(i=0;i<shape.n_samples;i++) {

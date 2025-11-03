@@ -22,13 +22,17 @@ typedef struct {
   int n_connections; /*!< the number of connections for a single cluster */
 } cluster_connections;
 
-void create_cluster_files(char* prefix, split_set s, dataset ds);
+void create_cluster_files(char* prefix, split_set s, database ds);
 
+split_set read_split_set(char* filename);
 void store_split_set(char* filename, split_set s);
+void write_split_set_to_db_indices(char* prefix, split_set s);
+void write_split_set_as_vdbs(char* prefix, split_set s, database db);
+
 
 cluster_connections*
 generate_split_set_relation(split_set ancient, split_set new);
 
-cluster data_not_in_clusters(split_set s, dataset ds);
+cluster data_not_in_clusters(split_set s, database ds);
 
 void free_split_set_and_associated_clusters(split_set s);

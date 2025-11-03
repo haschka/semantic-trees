@@ -4,6 +4,54 @@
 #include<unistd.h>
 #include<string.h>
 
+#include <json-c/json.h>
+
+char** extract_texts_from_jsonl_file(char* key, char* file,
+				     size_t* n) {
+
+  FILE* f = fopen(file,"r");
+
+  char * line = NULL;
+  size_t line_size = 0;
+
+  struct json_object* object_j;
+  struct json_object* text_j;
+
+  const char* return_string_buffer;
+
+  char ** texts = NULL;
+  size_t n_texts = 0;
+  
+  size_t return_string_length;
+  
+  while(-1 != getline(&line, &line_size, f)) {
+
+    object_j = json_tokener_parse(line);
+    text_j = json_object_object_get(object_j,key);
+
+    return_string_buffer = json_object_get_string(text_j);
+
+    return_string_length = strlen(return_string_buffer);
+
+    texts = realloc(texts,sizeof(char**)*(n_texts+1));
+    texts[n_texts] = (char*)malloc(sizeof(char)*(return_string_length+1));
+    memcpy(texts[n_texts],
+	   return_string_buffer,
+	   sizeof(char)*(return_string_length));
+    texts[n_texts][return_string_length] = 0;
+
+    n_texts++;
+    if(object_j != NULL) {
+      while(json_object_put(object_j) != 1) {
+	// free json
+      }
+    }
+  }
+  free(line);
+  n[0] = n_texts;
+  return(texts);
+}
+
 char** texts_from_files(char** files, int n_files) {
   int i;
   int fd;
@@ -33,7 +81,7 @@ char** texts_from_files(char** files, int n_files) {
   }
   return(textdb);
 }
-    
+
 char** cut_texts_in_subtexts(char* text,
 			     size_t text_length,
 			     size_t requested_length,
@@ -104,7 +152,44 @@ char** cut_texts_in_subtexts(char* text,
   return(texts);
 }
       
-    
+char** cut_texts_in_subtexts_with_overlap(char* text,
+					  size_t text_length,
+					  size_t requested_length,
+					  size_t * n_texts) {
+
+  size_t n_texts_a, n_texts_b, i;
+
+  size_t requested_length_half = requested_length / 2;
+
+  if (requested_length_half > text_length) {
+    fprintf(stderr,
+	    "Error: requested text lengths / 2 is > total text length\n");
+    _exit(1);
+  }
+  
+  char ** texts_a = cut_texts_in_subtexts(text,
+					  text_length,
+					  requested_length,
+					  &n_texts_a);
+
+  char ** texts_b = cut_texts_in_subtexts(text + requested_length_half,
+					  text_length - requested_length_half,
+					  requested_length,
+					  &n_texts_b);
+
+  n_texts[0] = n_texts_a+n_texts_b;
+  
+  texts_a = (char**)realloc(texts_a,sizeof(char*)*n_texts[0]);
+
+  for(i=0;i<n_texts_b;i++){
+    (texts_a+n_texts_a)[i] = texts_b[i];
+  }
+
+  free(texts_b);
+  
+  return(texts_a);
+}
+   
     
 
     

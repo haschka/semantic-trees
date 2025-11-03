@@ -4,6 +4,38 @@
 #include <json-c/json.h>
 #include"curl_helpers.h"
 
+char* generate_server_query(char* user_query,
+			    int n_tokens) {
+
+  struct json_object* new_query = json_object_new_object();
+
+  char* return_string;
+  size_t return_length;
+
+  const char* return_string_pointer;
+  
+  json_object_object_add(new_query,
+			 "prompt",
+			 json_object_new_string(user_query));
+  
+  json_object_object_add(new_query,
+			 "n_predict",
+			 json_object_new_int(n_tokens));
+
+  json_object_object_add(new_query,
+			 "stream",
+			 json_object_new_boolean(1));
+
+  return_string_pointer = json_object_to_json_string(new_query); 
+  return_length = strlen(return_string_pointer);
+  
+  return_string = (char*)malloc(sizeof(char)*(return_length+1));
+  memcpy(return_string,return_string_pointer,return_length);
+  return_string[return_length]=0;
+  
+  return(return_string);
+  
+}
 
 size_t write_function_callback(char* in_data,
 			       size_t size,
@@ -39,7 +71,6 @@ size_t write_function_callback_stream_llm(char* in_data,
   const char* export_string;
 
   size_t export_string_length;
-
   
   response_line = json_tokener_parse(in_data+5);
 
@@ -62,7 +93,12 @@ size_t write_function_callback_stream_llm(char* in_data,
     data->size += export_string_length;
     data->data[data->size] = 0;
   }
-  
+
+  if(response_line != NULL) {
+    while(json_object_put(response_line) != 1) {
+      // free json
+    }
+  }
   return(totalsize);
 }
   

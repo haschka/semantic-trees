@@ -11,57 +11,38 @@
 #include "wordlist.h"
 #include "local_resolve.h"
 #include "curl_helpers.h"
-      
-char* generate_server_query(char* user_query,
-			    int n_tokens) {
 
-  struct json_object* new_query = json_object_new_object();
+#if defined(_RAG_WITH_COS_SERVER)
+#include "embedding-from-server.h"
+#endif
 
-  char* return_string;
-  size_t return_length;
-
-  const char* return_string_pointer;
-  
-  json_object_object_add(new_query,
-			 "prompt",
-			 json_object_new_string(user_query));
-  
-  json_object_object_add(new_query,
-			 "n_predict",
-			 json_object_new_int(n_tokens));
-
-  json_object_object_add(new_query,
-			 "stream",
-			 json_object_new_boolean(1));
-
-  return_string_pointer = json_object_to_json_string(new_query); 
-  return_length = strlen(return_string_pointer);
-  
-  return_string = (char*)malloc(sizeof(char)*(return_length+1));
-  memcpy(return_string,return_string_pointer,return_length);
-  return_string[return_length]=0;
-  
-  return(return_string);
-  
-}
-
+#if defined(_RAG_WITH_YULE) || defined(_RAG_WITH_COS_SERVER)
 char *generate_instruct_prompt_with_db(char *user_input,
 				       char **conversation,
 				       size_t* conversation_length,
 				       database vdb,
+#if defined(_RAG_WITH_YULE)
 				       tokenlist tl,
+#elif defined(_RAG_WITH_COS_SERVER)
+				       char* embeddings_host,
+				       char* embeddings_port,
+#endif
 				       size_t n_db_results) {
 
   size_t i;
   char* embeddings;
   size_t* closest_results;
 
+#if defined(_RAG_WITH_YULE)
   char* user_input_for_wordlist;
   wordlist wl;
-
+#elif defined(_RAG_WITH_COS_SERVER)
+  embedding embedding_from_server;
+#endif
+  
   char context_count_header[20];
   
-  char system_msg_start[] = "<|begin_of_text|>"
+  char system_msg_start[] =
     "<|start_header_id|>system<|end_header_id|>\n\n"
     "You are a helpful AI assistant answering prompt "
     "takeing the following \n"
@@ -70,8 +51,8 @@ char *generate_instruct_prompt_with_db(char *user_input,
   char user_msg_start[] =
     "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n";
 
-  char assistent_msg_start[] =
-    "<|eot_id|><|start_header_id|>assistent<|end_header_id|>\n\n";
+  char assistant_msg_start[] =
+    "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n";
 
   char new_line[] = " \n ";
   
@@ -82,6 +63,8 @@ char *generate_instruct_prompt_with_db(char *user_input,
   
   char* final_prompt = NULL;
 
+#if defined(_RAG_WITH_YULE)
+  
   user_input_for_wordlist = (char*)malloc(sizeof(char)*(strlen(user_input)+1));
   memcpy(user_input_for_wordlist,user_input,sizeof(char)*(strlen(user_input)));
   user_input_for_wordlist[strlen(user_input)] = 0;
@@ -97,9 +80,20 @@ char *generate_instruct_prompt_with_db(char *user_input,
   
   embeddings = binary_embedding(wl,tl.n_tokens);
 
+#elif defined(_RAG_WITH_COS_SERVER)
+  embedding_from_server = get_embedding_from_server(embeddings_host,
+						    embeddings_port,
+						    user_input);
+  embeddings = (char*)embedding_from_server.vector;
+#endif
+  
   closest_results =
     create_closest_distances(vdb,
+#if defined(_RAG_WITH_YULE)
 			     Yule_distance,
+#elif defined(_RAG_WITH_COS_SERVER)
+			     cosine_distance,
+#endif
 			     embeddings,
 			     n_db_results);
 
@@ -142,11 +136,11 @@ char *generate_instruct_prompt_with_db(char *user_input,
     (char*)realloc(conversation[0],sizeof(char)*(conversation_length[0]+1));
   strcat(conversation[0],user_input);
 
-  /* adding the start message for the assistents following generated answer */
-  conversation_length[0] += strlen(assistent_msg_start);
+  /* adding the start message for the assistants following generated answer */
+  conversation_length[0] += strlen(assistant_msg_start);
   conversation[0] =
     (char*)realloc(conversation[0],sizeof(char)*(conversation_length[0]+1));
-  strcat(conversation[0],assistent_msg_start);
+  strcat(conversation[0],assistant_msg_start);
 
   /* build new prompt from past conversation */
   current_prompt_len += conversation_length[0];
@@ -156,6 +150,7 @@ char *generate_instruct_prompt_with_db(char *user_input,
 
   return(final_prompt);
 }
+#endif
 
 void add_llm_response_to_conversation(char** conversation,
 				      size_t* conversation_length,
@@ -168,7 +163,7 @@ void add_llm_response_to_conversation(char** conversation,
   
 char* generate_single_instruct_prompt(char* user_input) {
 
-  char system_msg[] ="<|begin_of_text|>"
+  char system_msg[] = 
     "<|start_header_id|>system<|end_header_id|>\n\n"
     "You are a helpful AI assistant answering prompt "
     "to the best of your knowledge\n"
@@ -269,7 +264,32 @@ char* generate_llm_answer_from_full_response(char* response) {
 
   return(response_string);
 }
-  
+
+/* begin readline utility functions */
+
+int io_newline(int count, int key) {
+  rl_insert_text("\n");
+  return 0;
+}
+
+int io_carrage(int count, int key) {
+  rl_insert_text("\n");
+  return 0;
+}
+
+int io_eof(int count, int key) {
+  rl_insert_text("\n");
+  rl_done = 1;
+  return 0;
+}
+
+int io_startup(void) {
+  rl_bind_key('\n', io_newline);
+  rl_bind_key('\r', io_carrage);
+  rl_bind_key(4, io_eof);
+}
+
+/* end readline utility functions */
 
 int main(int argc, char** argv) {
 
@@ -278,7 +298,6 @@ int main(int argc, char** argv) {
 #else
   static int n_arg = 3;
 #endif
-  
   char* prompt = NULL;
   char* query_string = NULL;
   char* response = NULL;
@@ -312,32 +331,52 @@ int main(int argc, char** argv) {
   char* url;
   size_t url_size;
 
+#if defined(_RAG_WITH_COS_SERVER)
+  char* embeddings_hostname;
+  char* embeddings_port;
+#endif
+
   conversation[0] = 0;
   
   if(argc < n_arg) {
     printf("Arguments are:\n"
-	   "  [string]  hostname\n"
-	   "  [int]     port\n"
-	   "  [int]     number of tokens per answer, -1 for infinite\n"
-#if defined(_RAG_WITH_YULE)	   
+           "  [string]  LLM server hostname\n"
+           "  [int]     LLM server port\n"
+           "  [int]     number of tokens per answer, -1 for infinite\n"
+#if defined(_RAG_WITH_YULE)
+           "  [file]    vector-database\n"
+           "  [int]     db results per query\n"
 	   "  [file]    tokenizer\n"
+#elif defined(_RAG_WITH_COS_SERVER)
 	   "  [file]    vector-database\n"
-	   "  [int]     db results per query\n"
+           "  [int]     db results per query\n"
+           "  [string]  Embeddings server hostname\n"
+	   "  [int]     Embeddings server port\n"
 #endif
 	   );
     return(1);
   }	   
 
-  url_size = + strlen(argv[1]) + strlen(argv[2]) + 25;
+  url_size = strlen(argv[1]) + strlen(argv[2]) + 25;
   url = (char*)malloc(sizeof(char)*url_size);
   sprintf(url,"http://%s:%s/completion",argv[1],argv[2]);
 
-#if defined(_RAG_WITH_YULE)
-  vdb = read_db_from_disk(argv[5]);
-  sscanf(argv[6],"%li",&n_db_results);
-  tl = read_tokenizer_from_file(argv[4]);
+#if defined(_RAG_WITH_YULE) || defined(_RAG_WITH_COS_SERVER)
+
+  vdb = read_db_from_disk(argv[4]);
+  sscanf(argv[5],"%li",&n_db_results);
+
 #endif
-  
+
+#if defined(_RAG_WITH_YULE)
+
+  tl = read_tokenizer_from_file(argv[6]);
+
+#elif defined(_RAG_WITH_COS_SERVER)
+  embeddings_hostname = argv[6];
+  embeddings_port = argv[7];
+#endif
+
   sscanf(argv[3],"%i",&n_tokens);
   
   rd.size = 0;
@@ -360,10 +399,14 @@ int main(int argc, char** argv) {
 
     host = curl_slist_append(NULL,curl_slist_string);
     
-  }  
+  }
+
+  /* setup readline */
+
+  rl_startup_hook = io_startup;
+  
   while(!terminate) {
 
-    
     iobuffer = readline("\001\033[33;1m\002 Human > \001\033[0m\002");
 
     if (NULL == iobuffer) {
@@ -377,23 +420,26 @@ int main(int argc, char** argv) {
 				       response);
     }
 
-#if defined(_RAG_WITH_YULE)
-    
+
+#if defined(_RAG_WITH_YULE) || defined(_RAG_WITH_COS_SERVER)
     prompt = generate_instruct_prompt_with_db(iobuffer,
 					      &conversation,
 					      &conversation_length,
 					      vdb,
+#if defined(_RAG_WITH_YULE)
 					      tl,
+#elif defined(_RAG_WITH_COS_SERVER)
+					      embeddings_hostname,
+					      embeddings_port,
+#endif
 					      n_db_results);
-#else
 
+#else
     prompt = update_conversation_only_prompt(iobuffer,
 					     response,
 					     prompt);
 
-#endif
-
-      
+#endif 
     /* fprintf(stderr,"PROMPT: %s",prompt); */
     
     free(iobuffer);	

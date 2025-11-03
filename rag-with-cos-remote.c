@@ -66,8 +66,8 @@ char *generate_instruct_prompt_with_db(char *user_input,
   char user_msg_start[] =
     "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n";
 
-  char assistent_msg_start[] =
-    "<|eot_id|><|start_header_id|>assistent<|end_header_id|>\n\n";
+  char assistant_msg_start[] =
+    "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n";
 
   char new_line[] = " \n ";
   
@@ -138,11 +138,11 @@ char *generate_instruct_prompt_with_db(char *user_input,
     (char*)realloc(conversation[0],sizeof(char)*(conversation_length[0]+1));
   strcat(conversation[0],user_input);
 
-  /* adding the start message for the assistents following generated answer */
-  conversation_length[0] += strlen(assistent_msg_start);
+  /* adding the start message for the assistants following generated answer */
+  conversation_length[0] += strlen(assistant_msg_start);
   conversation[0] =
     (char*)realloc(conversation[0],sizeof(char)*(conversation_length[0]+1));
-  strcat(conversation[0],assistent_msg_start);
+  strcat(conversation[0],assistant_msg_start);
 
   /* build new prompt from past conversation */
   current_prompt_len += conversation_length[0];

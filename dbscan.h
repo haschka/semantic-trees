@@ -3,11 +3,11 @@ typedef struct {
   int n_members; /*!< number of features in this neighborhood */
 } neighbors;
 
-split_set dbscan(dataset ds, float epsilon, int minpts);
-void adaptive_dbscan(split_set (*dbscanner) (dataset,
+split_set dbscan(database ds, float epsilon, int minpts);
+void adaptive_dbscan(split_set (*dbscanner) (database,
 					     float,
 					     int),
-		     dataset ds,
+		     database ds,
 		     float epsilon_start,
 		     float epsilon_inc,
 		     int minpts,

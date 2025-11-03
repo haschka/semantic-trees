@@ -1,3 +1,4 @@
+#include <json-c/json_object.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -42,12 +43,22 @@ embedding generate_embedding_from_server_data(char* server_response) {
   size_t i;
 
   struct json_object* response_j = json_tokener_parse(server_response);
+  struct json_object* response_j_inner;
+  
+  struct json_object* embedding_array_j_outher;
   struct json_object* embedding_array_j;
   struct json_object* embedding_vector_item;
 
+  struct json_object* error_handler;
+  struct json_object* error_message;
+  
   embedding e;
 
   int embedding_length;
+
+  const char* error_string;
+
+  size_t vector_write_size;
 
   if(response_j == NULL) {
     fprintf(stderr,
@@ -56,24 +67,73 @@ embedding generate_embedding_from_server_data(char* server_response) {
     _exit(1);
   }
 
-  json_object_object_get_ex(response_j, "embedding", &embedding_array_j);
+  if(json_object_get_type(response_j) == json_type_array) {
 
-  if( embedding_array_j == NULL ) {
+    response_j_inner = json_object_array_get_idx(response_j,0);
+    
+  } else {
+
+    json_object_object_get_ex(response_j,"error", &error_handler);
+    json_object_object_get_ex(error_handler,"message", &error_message);
+    error_string = json_object_get_string(error_message);
+
+    if(NULL != strstr(error_string,"input is too large")) {
+      fprintf(stderr, "Error: Input is too large, trying to recover\n"); 
+      if(response_j != NULL) {
+	while(json_object_put(response_j) != 1) {
+	  /* free json */
+	}
+      }
+      e.vector_length = 0;
+      e.vector = NULL;
+      return(e);
+    }
+
     fprintf(stderr,
-	    "Server response does not contain an embedding.\n"
-	    "The servers repsonse is given below \n%s\n", server_response);
+	    "Full JSON reponse from EMBEDDING\n"
+	    "is not an array, and first item could not be extracted.\n"
+	    "The servers response is given below \n%s\n",
+	    server_response);
+    _exit(1);
+  }
+    
+  if(response_j_inner == NULL) {
+    fprintf(stderr,
+	    "Full JSON reponse from EMBEDDING\n"
+	    "is not an array, and first item could not be extracted.\n"
+	    "The servers response is given below \n%s\n",
+	    server_response);
     _exit(1);
   }
 
-  json_object_array_length(embedding_array_j);
+  
+  json_object_object_get_ex(response_j_inner, "embedding",
+			    &embedding_array_j_outher);
 
-  e.vector = (double*)malloc(sizeof(double)*embedding_length);
+  embedding_array_j = json_object_array_get_idx(embedding_array_j_outher,0);
+  
+  embedding_length = json_object_array_length(embedding_array_j);
+
+  vector_write_size = sizeof(double)*embedding_length;
+  
+  posix_memalign((void**)(&(e.vector)),
+		 32,vector_write_size+(32-vector_write_size%32)); 
+
+  memset(e.vector,0,vector_write_size+(32-vector_write_size%32));
+  
   e.vector_length = embedding_length;
   
   for(i=0;i<embedding_length;i++) {
     embedding_vector_item = json_object_array_get_idx(embedding_array_j,i);
     e.vector[i] = json_object_get_double(embedding_vector_item);
   }
+  
+  if(response_j != NULL) {
+    while(json_object_put(response_j) != 1) {
+      /* free json */
+    }
+  }
+  
   return(e);
 }
 
@@ -138,6 +198,10 @@ embedding get_embedding_from_server(char* hostname, char* port, char* text) {
 
   e = generate_embedding_from_server_data(rd.data);
 
+  
+  if(rd.size > 0) free(rd.data);
+  free(embedding_query);
+  free(curl_slist_string);
   if(ip_address != NULL) free(ip_address);
   curl_easy_cleanup(curl);
 

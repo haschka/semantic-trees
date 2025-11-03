@@ -5,14 +5,14 @@
 #include<pthread.h>
 #include<string.h>
 
-#include"dataset.h"
+#include"vector-db.h"
 #include"cluster.h"
 #include"binary_array.h"
 #include"dbscan.h"
 
 typedef struct {
-  split_set (*dbscanner) (dataset, float, int);
-  dataset ds;
+  split_set (*dbscanner) (database, float, int);
+  database ds;
   float* epsilon_now;
   float epsilon_inc;
   int minpts;
@@ -25,121 +25,41 @@ typedef struct {
   int* stopindex;
 } thread_handler_adaptive_scan;
 
-static inline double Yule_distance(char* a,char* b, size_t length) {
-  size_t i;
-  long long int in_a_not_b = 0;
-  long long int in_a_in_b = 0;
-  long long int not_a_in_b = 0;
-  long long int not_a_not_b = 0;
-  double a_at_i;
-  double b_at_i;
-  int a_true;
-  int b_true;
-  long long int R;
-  
-  for(i = 0;i<length;i++) {
-    a_true = get_value_in_binary_array_at_index(a,i);
-    b_true = get_value_in_binary_array_at_index(b,i);
-  
-    if ( a_true && b_true ) {
-      in_a_in_b++;
-    } else if ( a_true ) {
-      in_a_not_b++;
-    } else if ( b_true ) {
-      not_a_in_b++;
-    } else {
-      not_a_not_b++;
-    }
-  }
-  R = 2 * in_a_not_b * not_a_in_b;
-  return((double) R /((double)in_a_in_b*(double)not_a_not_b));
-}
-
-static inline double cos_distance(double* a, double* b, size_t length) {
-  size_t i;
-
-  double sum_a = 0.0;
-  double c_a = 0.0;
-  double y_a,t_a;
-
-  double sum_b = 0.0;
-  double c_b = 0.0;
-  double y_b,t_b;
-
-  double sum_ab = 0.0;
-  double c_ab = 0.0;
-  double y_ab,t_ab;
-  
-  double a_value;
-  double b_value;
-  double a_times_b;
-  double input_a, input_b, input_ab;
-
-  for(i=0;i<length;i++) {
-    a_value =  a[i];
-    b_value =  b[i];
-    
-    input_ab = a_value*b_value;
-    y_ab = input_ab - c_ab;
-    t_ab = sum_ab + y_ab;
-    c_ab = ( t_ab - sum_ab ) - y_ab;
-    sum_ab = t_ab;
-
-    input_a = a_value*a_value;
-    y_a = input_a - c_a;
-    t_a = sum_a + y_a;
-    c_a = ( t_a - sum_a ) - y_a;
-    sum_a = t_a;
-
-    input_b = b_value*b_value;
-    y_b = input_b - c_b;
-    t_b = sum_b + y_b;
-    c_b = ( t_b - sum_b ) - y_b;
-    sum_b = t_b;
-  }
-  return(1-(sum_ab/(sqrt(sum_a)*sqrt(sum_b))));
-}
-
 static inline int compare(const void* a , const void* b) {
   int na = *(int*)a;
   int nb = *(int*)b;
   return (na-nb);
 }
 
-static inline neighbors region_query(int point, float epsilon, dataset ds) {
+static inline neighbors region_query(int point, float epsilon, database ds) {
 
   int i,j,k;
   neighbors nb;
 
   double distance;
 
-#if defined (_COS_DISTANCE)
-  double* a_point;
-  double* b_point;
-#elif defined (_YULE_DISTANCE)
   char* a_point;
   char* b_point;
-#endif
   
-  a_point = ds.values[point];
+  a_point = ds.vector[point];
 
-  nb.members = (int*)malloc(sizeof(int)*ds.n_values);
+  nb.members = (int*)malloc(sizeof(int)*ds.n_entries);
   nb.n_members = 0;
-  for(i=0;i<ds.n_values;i++) {
+  for(i=0;i<ds.n_entries;i++) {
 
-    b_point = ds.values[i];
+    b_point = ds.vector[i];
 
 #if defined (_COS_DISTANCE)
-    distance = cos_distance(a_point, b_point, ds.n_dimensions);
+    distance = cosine_distance(a_point, b_point, ds.vector_length);
 #elif defined (_YULE_DISTANCE)
-    distance = Yule_distance(a_point, b_point, ds.n_dimensions);
+    distance = Yule_distance(a_point, b_point, ds.vector_length);
 #endif
     if(distance <= epsilon) {
       nb.members[nb.n_members]=i;
       nb.n_members++;
     }
   }
-  qsort(nb.members,nb.n_members,sizeof(int),compare);
+  //qsort(nb.members,nb.n_members,sizeof(int),compare);
   return(nb);
 }
     
@@ -151,7 +71,7 @@ static inline void expand_cluster(int point,
 				  int minpts,
 				  char* visited,
 				  int* cluster_member,
-				  dataset ds) {
+				  database ds) {
 
   int i,j;
   neighbors nb_of_nb;
@@ -172,15 +92,15 @@ static inline void expand_cluster(int point,
 
   neighbors nb_unsorted;
 
-  nb_unsorted.members = (int*)malloc(sizeof(int)*ds.n_values);
-  memset(nb_unsorted.members,0,sizeof(int)*ds.n_values);
+  nb_unsorted.members = (int*)malloc(sizeof(int)*ds.n_entries);
+  memset(nb_unsorted.members,0,sizeof(int)*ds.n_entries);
   
-  merge = (int*)malloc(ds.n_values*sizeof(int));
+  merge = (int*)malloc(ds.n_entries*sizeof(int));
 
   memcpy(nb_unsorted.members,nb.members,sizeof(int)*nb.n_members);
   nb_unsorted.n_members = nb.n_members;
 
-  cl->members = (int*)malloc(sizeof(int)*ds.n_values);
+  cl->members = (int*)malloc(sizeof(int)*ds.n_entries);
   cl->members[cl->n_members] = point;
   cluster_member[point] = 1;
   cl->n_members++;
@@ -287,15 +207,15 @@ static inline void expand_cluster(int point,
   free(merge);
 }
 
-split_set dbscan(dataset ds, float epsilon, int minpts) {
+split_set dbscan(database ds, float epsilon, int minpts) {
 
   int i;
   neighbors nb;
   split_set ret_val;
-  cluster* clusters = (cluster*)malloc(sizeof(cluster)*ds.n_values);
-  char* visited = alloc_and_set_zero_binary_array(ds.n_values);
+  cluster* clusters = (cluster*)malloc(sizeof(cluster)*ds.n_entries);
+  char* visited = alloc_and_set_zero_binary_array(ds.n_entries);
   int n_clusters = 0;
-  int* cluster_member = (int*)malloc(sizeof(int)*ds.n_values);
+  int* cluster_member = (int*)malloc(sizeof(int)*ds.n_entries);
   
   if (epsilon == -1) {
     printf("Warning @dbscan: epsilon value is: %f\n", epsilon);
@@ -308,17 +228,17 @@ split_set dbscan(dataset ds, float epsilon, int minpts) {
     printf("Warning @dbscan: minpts was changed to: %i\n", minpts);
   }
 
-  ret_val.clusters = (cluster*)malloc(sizeof(cluster)*ds.n_values);
+  ret_val.clusters = (cluster*)malloc(sizeof(cluster)*ds.n_entries);
 
-  memset(cluster_member,0,sizeof(int)*ds.n_values);
+  memset(cluster_member,0,sizeof(int)*ds.n_entries);
 
-  for(i=0;i<ds.n_values;i++) {
+  for(i=0;i<ds.n_entries;i++) {
     //    clusters[i].members = NULL;
     clusters[i].n_members = 0;
     clusters[i].id = i;
   }
 
-  for(i=0;i<ds.n_values;i++) {
+  for(i=0;i<ds.n_entries;i++) {
     if(!get_value_in_binary_array_at_index(visited,(size_t)i)) {
       set_value_in_binary_array_at_index(visited,(size_t)i);
       nb = region_query(i, epsilon, ds);
@@ -354,15 +274,21 @@ void* adaptive_dbscan_thread(void* arg) {
 
   thread_handler_adaptive_scan* th = (thread_handler_adaptive_scan*)arg;
 
-  dataset ds = th->ds;
+  database ds = th->ds;
   float epsilon;
   int index;
+
+  int do_stop;
 
   split_set current_split_set;
   
   while(1) {
 
-    if(th->stop[0]) {
+    pthread_mutex_lock(th->lock_stop);
+    do_stop = th->stop[0];
+    pthread_mutex_unlock(th->lock_stop);
+
+    if(do_stop) {
       goto finish;
     }
     
@@ -400,17 +326,17 @@ void* adaptive_dbscan_thread(void* arg) {
 }
 
 
-void adaptive_dbscan(split_set (*dbscanner) (dataset,
+void adaptive_dbscan(split_set (*dbscanner) (database,
 					     float,
 					     int),
-		     dataset ds,
+		     database ds,
 		     float epsilon_start,
 		     float epsilon_inc,
 		     int minpts,
 		     char* split_files_prefix,
 		     int n_threads) {
 
-    int i,j,k;
+  int i,j,k;
   
   int initial_counter, count, eps_count;
   
@@ -460,7 +386,7 @@ void adaptive_dbscan(split_set (*dbscanner) (dataset,
     }
 
     printf("Coverage at initial point: %f\n",
-	   (float)1.f-(float)not_covered.n_members/(float)ds.n_values);
+	   (float)1.f-(float)not_covered.n_members/(float)ds.n_entries);
 
 
     if (initial_counter == 20 || epsilon_start == 0) {
@@ -488,7 +414,7 @@ void adaptive_dbscan(split_set (*dbscanner) (dataset,
   }
 
   printf("Coverage at initial point: %f\n",
-	 (float)1.f-(float)not_covered.n_members/(float)ds.n_values);
+	 (float)1.f-(float)not_covered.n_members/(float)ds.n_entries);
 
   if(set_of_split_sets[0].n_clusters == 1) {
     printf("All clusters fusioned in one step, decrease epsilon increment\n");
@@ -538,7 +464,8 @@ void adaptive_dbscan(split_set (*dbscanner) (dataset,
 
   pthread_mutex_destroy(lock_stop);
   pthread_mutex_destroy(lock_eps);
-
+  pthread_mutex_destroy(lock_split_sets);
+      
   count = 0;
   
   for(i=1;i<=th->stopindex[0];i++) {
@@ -551,7 +478,7 @@ void adaptive_dbscan(split_set (*dbscanner) (dataset,
       printf("Layer %i has %i clusters\n",count+1, new_split_set.n_clusters);
       
       printf("  Coverage at layer %i: %f\n", count+1,
-	     1.f-(float)not_covered.n_members/(float)ds.n_values);
+	     1.f-(float)not_covered.n_members/(float)ds.n_entries);
 
       if(not_covered.n_members > 0) {
 	free(not_covered.members);
