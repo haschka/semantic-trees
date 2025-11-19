@@ -2,6 +2,10 @@
 
 \usepackage{graphicx}
 
+\author {
+  Thomas Haschka \and Joseph Bakarji
+  }
+
 \title{Semantic Tree Inference on Text Corpa using a Nested Density
   Approach together with Large Language Model Embeddings}
 
@@ -63,7 +67,7 @@ such as word2vec \cite{word2vec} have arrived in the middle of the
 last decade. These models could learn the relationships between words
 in a semantic proximity sense, but still not in a grammatical
 sequence.
-The rise of the transformer model and the popularization
+The rise of the transformer model \cite{transformer} and the popularization
 of LLMs allowed for the use of LLM embeddings for document
 classification, and document retrieval. The transformer model is
 superieur as it efficiently encodes and uses
@@ -238,7 +242,7 @@ We selected the following datasets for our study:
      the Internet Movie Database (IMDB), each labeled with a binary
      sentiment (positive or negative) \cite{50kmovies}. 
    \item \textbf{AG News}: A large-scale news dataset consisting of short
-     article titles and descriptions categorized into four topics: \emph{World},
+     article titles and descriptions categorized into four topics: World,
      Sports, Business, and Science/Technology.
      \cite{agnews}. 
   \item \textbf{dbpedia\_14}: This dataset contains short texts
@@ -346,7 +350,7 @@ broader clusters capture more general scientific domains.
 To generate these annotations, we employed a Large Language Model
 (LLM) capable of handling large textual contexts. Specifically, we
 used the Llama-4-Scout-17B-16E-Instruct model
-\cite{meta2024llama4} in 6 bit quantized form,
+\cite{meta2024llama4} in 6-bit quantized form,
 which provides a nominal context window of up to
 11 million tokens. Due to technical constraints, our inference
 pipeline successfully operated with a maximum context size of
@@ -367,15 +371,26 @@ chunks $s$ was determined as:
 \end{equation}
 where the factor of 3 ensures oversampling to enhance topic stability.
 Each chunk was processed independently by the LLM to yield a candidate
-research field label. All resulting labels were subsequently fed into
-a second LLM pass, where the model inferred the overarching research
-field encompassing all $s$ subfields.
+research field label. In less then 1 in 100 cases, the LLM did not
+produce a clear output. Even though the prompt enforces to yield only
+one research field on a single line, this is not always the case. As
+such in all cases where answers span more than one line, or contain
+more than 80 characters, we
+yield these answers to the gpt-oss-20b model \cite{gpt-oss} in 8-bit
+quantized form, and ask it
+to decide from the previous output on a single research field.
+
+In the case were the cluster had to be sampled because it contained
+more than 1500 abstracts all resulting labels were subsequently fed into
+a second LLM pass. Again the gpt-oss-20b model \cite{gpt-oss} in 8-bit
+quantized form is used in such a case where the model inferred the
+overarching research field encompassing all $s$ subfields. 
 
 Tree annotation is computationally intensive. The AUB tree required
 annotating 33{,}862 text files, while the TU Wien tree required
 62{,}012, including oversampling according to
 Equation~\ref{eqn-sampling}. Inference was performed using the
-\texttt{llama.cpp} \cite{llama.cpp} engine on the MUSICA supercomputer
+\texttt{llama.cpp} \cite{llama-cpp} engine on the MUSICA supercomputer
 (Austria). Up to 80 NVIDIA H100 GPUs were employed concurrently during
 annotation. Each compute node with four H100 GPUs (80~GB VRAM each)
 handled batches of approximately 600{,}000 tokens per inference
@@ -415,6 +430,83 @@ segregation and overlap. For the IMDB 50K reviews dataset, we colored
 the tree by sentiment polarity, enabling a visual inspection of how
 positive and negative reviews cluster across different density layers.
 
+\section{Results}
+
+\subsection{Efficiency of PCA and the $L_2$-norm Compared to Cosine Distance}
+
+Cosine distance is widely used for comparing high-dimensional embedding
+vectors and is the default similarity measure in many retrieval-based
+applications, including RAG pipelines. For this reason, we initially
+expected cosine distance to be the natural choice for the DBSCAN
+iterations underlying our tree construction algorithm. However, trees
+constructed directly from full 4096-dimensional cosine distances
+consistently exhibited limited structural resolution: branches were
+poorly separated, fine-grained clusters failed to emerge, and the overall
+tree topology did not yield significant insights.
+
+In contrast, applying Principal Component Analysis (PCA) prior to
+clustering dramatically improved the quality and expressiveness of the
+resulting trees. Experiments with 10, 5, and 2 principal components
+showed that lower-dimensional PCA representations consistently produced
+more “spread out” trees with clearer branching and more detectable
+fine-scale semantic substructure. We suggest that this effect is due
+to the inherent ability of PCA to yield principal components that
+maximize variance and that this feature selection process has a
+positive effect on our clustering algorithm. A similar effect was
+noted previously in the algorithmic supplement of
+\cite{mnhn-tree-tools}.
+
+A comparison between trees obtained with cosine distance and with the
+$L_2$-norm applied to PCA-reduced embeddings is shown in Figure
+\ref{fig-compairison-L2-cos}. From left to right, the trees become more
+hierarchically detailed and reveal progressively finer semantic
+subclusters. For these illustrative examples, the parameters were chosen
+using a rudimentary bisection search to produce visually optimized
+trees. The parameter settings were as follows: for cosine distance,
+initial $\epsilon = 0.275$, $\Delta \epsilon = 0.001$, and
+$\mathrm{minpts}=5$; for the $L_2$-norm on 10 principal components,
+initial $\epsilon = 0.091$, $\Delta \epsilon = 0.0001$,
+$\mathrm{minpts}=5$; and for the $L_2$-norm on 2 principal components,
+initial $\epsilon = 0.0039$, $\Delta \epsilon = 0.00001$,
+$\mathrm{minpts}=5$. The trees shown in \ref{fig-compairison-L2-cos}
+were built from embeddings obtained form the Qwen3-Embedding-8B model.
+\begin{figure*}
+  \begin{center}
+  \includegraphics{comparision-cos-L2.pdf}
+  \caption{A comparison of trees built from the 20-newsgroup dataset
+    under different distance measures}
+  \label{fig-compairison-L2-cos}
+  \end{center}
+\end{figure*}
+
+\subsection{Detection of Topics and Semantics}
+
+Depending on the dataset we used different evaluation methods, in
+order to validate if, and to what kind of extend our in here proposed
+method works, under the computational constraints that are given to
+us. For a quick evaluation that topic attibution in the tree built
+from the emebddings works we outline our trees built from the
+20-newsgroups dataset in Figure \ref{fig-20news-colored}.
+The inferred tree for the 20 Newsgroups dataset uses
+color to indicate how strongly each cluster corresponds to a
+particular newsgroup. Posts belonging to the target newsgroup
+are shown in blue, while posts from all other newsgroups are
+shown in orange. Both colors vary on a logarithmic scale based
+on how many posts of each type appear in the cluster: white
+indicates zero posts, and deeper blue or orange indicates a
+higher concentration, reaching full blue when all posts in the
+cluster belong to the target newsgroup, and full orange when all
+posts come from other newsgroups.
+
+We see that different newsgroups with supposely similar content enter the same
+tree branches. 
+\begin{figure*}
+  \begin{center}
+    \includegraphics{20-newsgroups.pdf}
+    \caption{Tree represenations of the 20 Newsgroups dataset.}
+    \label{fig-20news-colored}
+  \end{center}
+\end{figure*}
  
 \bibliographystyle{ieeetr}
 \bibliography{bib}
