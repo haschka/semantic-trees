@@ -21,7 +21,7 @@ and retrieve text by semantic similarity in vector databases, the
 global structure semantic relationships in text corpa often remains
 opaque.
 
-Herein we propose a nested densty clustering
+Herein we propose a nested density clustering
 approach, to infer hirachical trees of semantically related texts. The
 method starts by identifying texts of strong semantic similarity as it searches
 for dense clusters in LLM embedding space. As the density
@@ -473,7 +473,7 @@ were built from embeddings obtained form the Qwen3-Embedding-8B model.
 \begin{figure*}
   \begin{center}
   \includegraphics{comparision-cos-L2.pdf}
-  \caption{A comparison of trees built from the 20-newsgroup dataset
+  \caption{A comparison of trees built from the 20 Newsgroups dataset
     under different distance measures}
   \label{fig-compairison-L2-cos}
   \end{center}
@@ -481,25 +481,80 @@ were built from embeddings obtained form the Qwen3-Embedding-8B model.
 
 \subsection{Detection of Topics and Semantics}
 
-Depending on the dataset we used different evaluation methods, in
-order to validate if, and to what kind of extend our in here proposed
-method works, under the computational constraints that are given to
-us. For a quick evaluation that topic attibution in the tree built
-from the emebddings works we outline our trees built from the
-20-newsgroups dataset in Figure \ref{fig-20news-colored}.
-The inferred tree for the 20 Newsgroups dataset uses
-color to indicate how strongly each cluster corresponds to a
-particular newsgroup. Posts belonging to the target newsgroup
-are shown in blue, while posts from all other newsgroups are
-shown in orange. Both colors vary on a logarithmic scale based
-on how many posts of each type appear in the cluster: white
-indicates zero posts, and deeper blue or orange indicates a
-higher concentration, reaching full blue when all posts in the
-cluster belong to the target newsgroup, and full orange when all
-posts come from other newsgroups.
+Depending on the dataset, we applied different evaluation strategies to
+assess whether, and to what extent, the method proposed in this work
+produces meaningful and reliable results, given the computational
+constraints of our setup. The following subsections outline these
+evaluations and illustrate the behavior of our hierarchical
+density-based tree construction across diverse text corpora.
 
-We see that different newsgroups with supposely similar content enter the same
-tree branches. 
+\subsubsection{20 Newsgroups}
+
+To evaluate whether our tree construction method recovers meaningful
+semantic structure, we applied it to the 20 Newsgroups dataset. The
+resulting trees were colored according to posting labels, as shown in
+Figure \ref{fig-20news-colored}. For each newsgroup we generated a
+separate color map: posts from the target newsgroup are shown in blue,
+and posts from all other newsgroups in orange. Both color intensities
+follow a logarithmic scale proportional to the number of posts in each
+cluster, with white indicating the absence of posts of a given type.
+
+The inferred tree, as highlighted in figure \ref{fig-20news-colored},
+recovers many interesting relationships between the newsgroups:
+
+\begin{itemize}
+\item \textbf{Sports-related groups.}  
+  The groups \emph{rec.sport.baseball} and \emph{rec.sport.hockey}
+  form a shared subtree located close to the root of the full tree.
+  This indicates strong internal similarity between the two sports
+  discussions, combined with substantial separation from most other
+  topics.
+
+\item \textbf{Automotive-related groups.}  
+  The groups \emph{rec.autos} and \emph{rec.motorcycles} cluster
+  tightly in a small dedicated sub-branch. A fraction of their posts
+  appears in regions of the tree that correspond to scientific or
+  technical discussions, likely reflecting threads involving
+  engineering aspects of vehicles.
+
+\item \textbf{Religion and politics.}  
+  The groups \emph{soc.religion.christian}, \emph{alt.atheism}, and
+  \emph{talk.religion.misc} form a joint subtree that also contains
+  the political groups \emph{talk.politics.guns},
+  \emph{talk.politics.mideast}, and \emph{talk.politics.misc}.  This
+  intersection reflects the topical proximity and overlapping
+  discussions between religion and politics within the dataset.
+
+\item \textbf{Computer-related groups.}  
+  The \emph{comp.*} groups, including \emph{comp.sys.mac.hardware},
+  \emph{comp.windows.x}, \emph{comp.graphics}, and
+  \emph{comp.os.ms-windows}, form a coherent subtree corresponding to
+  computer hardware and software discussions. Some overlap with
+  \emph{sci.electronics} is visible, consistent with semantically
+  similar content.
+
+\item \textbf{Marketplace group.}
+  The \emph{misc.forsale} posts distribute across multiple regions of
+  the tree, often co-occurring with the automotive and computer
+  subtrees, suggesting that sale-related messages tend to mirror the
+  underlying topical focus of corresponding technical groups.
+
+\item \textbf{The cryptography group.}  
+  The \emph{sci.crypt} group appears in a distinct set of branches
+  close to the root, and is clearly separated from both the scientific
+  and computer-related subtrees. This separation may stem from the
+  unique vocabulary and specialized discourse typical of cryptography
+  discussions.
+\end{itemize}
+
+Overall the structure seems to intuitively make sense, outlining
+intervoven fields of discussion. Importantly,
+our toolchain does not merely cluster newsgroups into isolated groups;
+it also conveys the relative proximity and semantic distance between
+them. The resulting tree therefore serves as a compact visual
+instrument that captures both fine-grained cluster structure and the
+broader topology of topic similarity within the dataset, all within a
+single interpretable representation. 
 \begin{figure*}
   \begin{center}
     \includegraphics{20-newsgroups.pdf}
@@ -507,7 +562,12 @@ tree branches.
     \label{fig-20news-colored}
   \end{center}
 \end{figure*}
- 
+
+\subsubsection{IMDB 50K Reviews}
+The IMDB 50K Reviews dataset was used to see if our trees and
+underlying embedding models can separate between emotional positivity
+or negativity.
+
 \bibliographystyle{ieeetr}
 \bibliography{bib}
 
