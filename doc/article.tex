@@ -378,7 +378,10 @@ such in all cases where answers span more than one line, or contain
 more than 80 characters, we
 yield these answers to the gpt-oss-20b model \cite{gpt-oss} in 8-bit
 quantized form, and ask it
-to decide from the previous output on a single research field.
+to decide from the previous output on a single research field. As the
+output from the first run might be due to errors in the LLM very large
+we only keep the last 20000 characters during this pass to the
+gpt-oss-20b model. 
 
 In the case were the cluster had to be sampled because it contained
 more than 1500 abstracts all resulting labels were subsequently fed into
@@ -564,9 +567,56 @@ single interpretable representation.
 \end{figure*}
 
 \subsubsection{IMDB 50K Reviews}
-The IMDB 50K Reviews dataset was used to see if our trees and
-underlying embedding models can separate between emotional positivity
-or negativity.
+
+The IMDB 50K Reviews dataset was used to evaluate whether our tree
+construction method, together with the underlying embedding models, is
+able to separate reviews by emotional polarity. We therefore built a
+tree from this dataset following the same procedure as for the other
+corpora. The resulting tree was then colored analogously to the 20
+Newsgroups experiments: clusters containing predominantly positive
+reviews were assigned a blue shading, while clusters containing
+predominantly negative reviews were shaded in orange. As before, color
+intensity follows a logarithmic scale, with white indicating the
+absence of reviews of a given label and deeper blue or orange
+indicating higher concentration. Overlaps appear in darker,
+greenish to black tones. 
+
+The resulting tree is shown in Figure
+\ref{fig-50k-news-colored}. Compared to the other datasets, the IMDB
+tree appears noticeably less structured, suggesting that the
+underlying corpus is more homogeneous and lacks strong semantic
+subdivisions beyond sentiment. Nonetheless, we observe a few small
+subtrees near the periphery of the tree in which positive reviews form
+a clear majority. Additional localized regions with a majority of
+positive or negative reviews can also be identified. We speculate that
+these structures arise from repetitive linguistic patterns that occur
+more frequently in either positive or negative reviews. However, they
+do not form large coherent branches, and overall the dataset does not
+separate cleanly by sentiment. 
+
+This observation suggests that the embedding models
+used: Qwen3-Embedding-8B \cite{qwen3embedding} and
+SFR-Embedding-Mistral \cite{SFRembedding} encode emotional polarity
+only to a limited extent. The results highlight the importance of
+choosing embedding models appropriate for the expected semantic
+structure when constructing trees. 
+
+We also attempted to annotate the IMDB tree with the
+Llama-4-Scout-17B-16E-Instruct model \cite{meta2024llama4}. The goal
+was to obtain genre-level descriptions of tree regions, under the
+assumption that certain movie genres might correlate with
+predominantly positive or negative reviews. This attempt was
+unsuccessful: the model did not produce reliable or meaningful genre
+assignments, and more fundamentally, such information appears to be
+largely absent from the review text itself. As such, deriving movie
+genres from this dataset seems infeasible with current methods. 
+\begin{figure}
+  \begin{center}
+    \includegraphics{50-pos-neg.png}
+    \caption{The IMDB 50K Reviews dataset colored by sentiments.}
+    \label{fig-50k-news-colored}
+  \end{center}
+\end{figure}
 
 \bibliographystyle{ieeetr}
 \bibliography{bib}
