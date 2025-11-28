@@ -387,7 +387,18 @@ In the case were the cluster had to be sampled because it contained
 more than 1500 abstracts all resulting labels were subsequently fed into
 a second LLM pass. Again the gpt-oss-20b model \cite{gpt-oss} in 8-bit
 quantized form is used in such a case where the model inferred the
-overarching research field encompassing all $s$ subfields. 
+overarching research field encompassing all $s$ subfields. An overview about
+the different paths that annotation might undergo is outlined in Figure
+\ref{fig-annotation}.
+\begin{figure}
+  \begin{center}
+    \includegraphics{annotation-schema.pdf}
+    \caption{Shematic represantation of the tree node / cluster
+      annotation process}
+    \label{fig-annotation}
+  \end{center}
+\end{figure}
+  
 
 Tree annotation is computationally intensive. The AUB tree required
 annotating 33{,}862 text files, while the TU Wien tree required
@@ -401,6 +412,20 @@ instance. Multi-node inference, which could allow for a higher context
 token limit, was not attempted as MUSICA is currently in its test
 phase; instead, parallelism was achieved by distributing text files
 across multiple nodes for simultaneous inference.
+
+\subsection{Label Transcription}
+
+The theses-fr-en dataset is annotated and contains a research field
+(discipline, in French) for each abstract. However, these fields can
+in many cases be freely chosen by the thesis author, resulting in 13,599
+unique discipline labels. 
+To obtain a more coherent and standardized annotation, we used the
+gpt-oss-20b model to classify all 13,599 labels according to the
+OECD Fields of Science (FOS) 2002 classification \cite{oecd-fos}. 
+The resulting transcribed labels were then used to color
+the trees inferred from this dataset, allowing us to assess whether
+specific scientific fields tend to separate into distinct
+and meaningful branches. 
 
 \subsection{Tree Coloration and Visualization}
 
