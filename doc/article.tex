@@ -643,6 +643,41 @@ genres from this dataset seems infeasible with current methods.
   \end{center}
 \end{figure}
 
+\subsubsection{AG News}
+
+We further built trees from the AG News dataset and colored them
+according to the four available labels: World, Sports, Business, and
+Science/Technology. For each label, a separate color map was generated.
+Items belonging to the target label are highlighted in blue, while all
+other items are shown in orange. As in previous visualizations, we use a
+logarithmic color gradient to represent the number of articles in each
+cluster, ranging from white (no articles of that type) to fully saturated
+colors (all articles in the cluster belong to the target label). The
+resulting trees are shown in Figure \ref{fig-ag-news}. 
+\begin{figure*}
+  \begin{center}
+    \includegraphics{ag_news.pdf}
+    \caption{Trees built from the AG News dataset.}
+    \label{fig-ag-news}
+  \end{center}
+\end{figure*}
+We observe that the \emph{World} and \emph{Sports} categories form
+clearly separable structures: both branch off early from the root of the
+tree, resulting in two well-defined clades with only minimal
+contamination from other labels. Around the root, however, a small number
+of scattered articles appear, suggesting that certain headlines are not
+easily classifiable by the embedding models. These headlines seem to be
+very distant from the other news items, only joining the root at a
+very diffuse density.
+
+The remaining two categories—\emph{Business} and \emph{Science/Technology}—show
+substantial overlap. They jointly occupy the third major branch of the
+tree, and only small terminal sub-branches demonstrate consistent
+label-specific structure. We attribute this to the general type of
+embedding models that we are using here. Further business headlines
+frequently mention science and technology and vice versa in this
+dataset. 
+
 \bibliographystyle{ieeetr}
 \bibliography{bib}
 
