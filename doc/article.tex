@@ -1,6 +1,7 @@
 \documentclass[10pt,a4paper,twocolumn]{article}
 
 \usepackage{graphicx}
+\usepackage{hyperref}
 
 \author {
   Thomas Haschka \and Joseph Bakarji
@@ -458,6 +459,19 @@ segregation and overlap. For the IMDB 50K reviews dataset, we colored
 the tree by sentiment polarity, enabling a visual inspection of how
 positive and negative reviews cluster across different density layers.
 
+For the annotated datasets from TU Wien and AUB, we required a
+high-resolution visualization that allows all node-level labels to be
+displayed and inspected. The resulting tree images are extremely large,
+making standard static rendering impractical. To enable detailed
+exploration, we developed a tile-based viewer application with two
+coordinated windows. One window displays the full, non-annotated tree,
+while the second window shows a zoomed view of a selected region,
+including the labels for the nodes currently in focus. Navigation is
+performed either by clicking on the full-tree view, which updates the
+zoomed window to the selected location, or by dragging within the zoomed
+window, which moves a red cursor on the full-tree view to indicate the
+corresponding position.
+
 \section{Results}
 
 \subsection{Efficiency of PCA and the $L_2$-norm Compared to Cosine Distance}
@@ -676,7 +690,122 @@ tree, and only small terminal sub-branches demonstrate consistent
 label-specific structure. We attribute this to the general type of
 embedding models that we are using here and that business headlines
 frequently mention science and technology and vice versa in this
-dataset. 
+dataset.
+
+\subsubsection{Annotated Institutional Trees: TU Wien and AUB}
+
+Our analysis of the two institutional datasets (TU Wien and AUB) differs
+from the benchmark datasets presented earlier. In the benchmark cases,
+we projected known labels onto the inferred trees to assess how well
+embeddings recover an existing classification. In contrast, the
+institutional datasets are used to examine research structures ab
+initio: rather than testing whether a predefined taxonomy is recovered,
+we investigate how the tree itself organizes the institutional research
+landscape.
+Although the embedding models were taken trained on external corpora,
+and not further fine tuned, the
+resulting tree structure is independent of any curated ontology. This
+allows us to explore institution-specific disciplinary profiles,
+structural proximities between fields, and potential emerging clusters
+or cross-disciplinary connections. The results demonstrate that our
+method can capture meaningful organizational patterns without relying
+on predefined categories.
+\begin{itemize}
+
+\item  American University of Beirut (AUB)
+
+  At the American University of Beirut, medicine and health-related
+  disciplines dominate the research corpus, reflecting the strong
+  presence of the university hospital. This dominance is visible in the
+  tree structure, where the entire upper half of the circular tree forms
+  the largest and most cohesive clade. Within this region, several
+  well-defined subbranches correspond to specific healthcare domains,
+  including health and nutrition, health policy and systems research,
+  and public health and epidemiology.
+
+  A distinct humanities clade is also present, characterized by numerous
+  subbranches labeled as Middle Eastern Studies and Conflict
+  Resolution. In addition, an engineering clade—covering engineering,
+  physics, and mathematics—is clearly visible. Notably, this engineering
+  clade merges with the humanities clade at a higher density than with the
+  medical clade, suggesting a closer structural relationship between
+  engineering and humanities research topics within this corpus than might
+  be expected.
+
+  To the left of these major clades, smaller clusters related to both
+  engineering and humanities fields branch into the tree and eventually
+  merge with the broader medical clade. Beyond this point, several
+  near-linear terminal branches from a wide range of disciplines connect
+  to the tree as outliers before joining the main structure.
+  
+  The full tree is shown in Figure \ref{fig-aub-tree} and can be explored
+  in detail using our interactive tree viewer at \url{http://}. As in the
+  other figures, color intensity is logarithmically scaled from white (no
+  articles in the branch) to black (all articles in the dataset).
+  
+\item Technische Universität Wien (TU Wien)
+
+  The tree structure for TU Wien differs markedly from that of AUB. As a
+  technical university, TU Wien has a more focused research portfolio,
+  which results in a tree that appears more homogeneous overall.
+  Nevertheless, the tree reveals several large and meaningful clades that
+  highlight the institution’s disciplinary strengths.
+  
+  At the upper right of the tree, we observe a clade corresponding to
+  quantum mechanics, quantum optics, and quantum-scale materials.
+  This region merges smoothly into a broad materials science clade,
+  which occupies much of the upper left quadrant of the circular tree.
+  
+  Also in the upper left quadrant is a large clade corresponding to
+  information technology and computer science, which subdivides into
+  numerous smaller branches. Further branches that merge into the main
+  tree at later stages correspond to nanotechnology and semiconductor
+  engineering. Additional clusters represent infrastructure planning
+  and environmental engineering. One of the earliest large branchings
+  near the root corresponds to mathematics and theoretical physics,
+  forming a distinct foundational science substructure.
+
+  The TU Wien tree is shown in Figure \ref{fig-tuwien-tree}, and an
+  interactive exploration is available through our tree viewer at
+  \url{http://}. As with the AUB tree, color intensity follows a
+  logarithmic scale from white (no articles) to black (all articles in the
+  dataset).
+
+\end{itemize}
+\begin{figure*}
+  \begin{center}
+    \includegraphics{aub-tree.png}
+    \caption{Tree generated from the AUB dataset.}
+    \label{fig-aub-tree}
+  \end{center}
+\end{figure*}
+
+\begin{figure*}
+  \begin{center}
+    \includegraphics{tuwien-tree.png}
+    \caption{Tree generated from the TU Wien dataset.}
+    \label{fig-tuwien-tree}
+  \end{center}
+\end{figure*}
+
+We note, as can also be verified using our custom tree viewer, that the
+automatic annotation of clusters is not without limitations. In many
+cases, the LLM assigns overly general labels—such as engineering—to
+large or heterogeneous clusters. Moreover, clusters that are
+structurally identical across different annotation runs sometimes
+receive different labels, suggesting that the model struggles with
+processing extremely large input contexts and exhibits instability in
+its naming decisions. Despite these limitations, the annotation process
+provided substantial insights into both institutions, their publication
+profiles, and the major research fields represented within their
+corpora. 
+
+\section{Discussion}
+
+Herein we outline our hierachical density based tree construction
+method, applied onto LLM embeddings from large text corpora. 
+
+
 
 \bibliographystyle{ieeetr}
 \bibliography{bib}
