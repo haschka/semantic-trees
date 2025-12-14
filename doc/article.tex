@@ -46,7 +46,7 @@ structure and evolution in textual datasets.
 
 \section{Background}
 
-Text classification date back at least to bag of words models
+Text classifications date back at least to bag of words models
 \cite{bagofwords}. In these early approaches, each text is represented
 as a vector of word frequencies, disregarding the order of words.
 However, word order is a key semantic feature as changing it can
@@ -214,12 +214,11 @@ to texts written in English.
 
 We selected the following datasets for our study:
 \begin{itemize}
-  \item \textbf{Theses-fr-en}: English abstracts of theses defended in
-    France: The French
-    government publishes by means of its open data initiative a
-    dataset containing all theses defended in France since 1985. We
-    filtered this dataset for english abstracts. This data was
-    obtained from the \emph{data.gouv.fr} platform.
+  \item \textbf{AUB}: English abstracts of publications authored by the
+    American University of Beirut (AUB) from 2018 to October 2025. The data
+    were provided by the AUB University Libraries. To ensure comparability,
+    the roughly the same temporal window and language filters, only english
+    abstracts, as for the TU Wien corpus were applied.
   \item \textbf{TU Wien}:   English abstracts of publications affiliated
     with TU Wien between 2018 and April 2025. The data were provided by
     the TU Wien Service Unit for Research Information Systems as
@@ -227,11 +226,6 @@ We selected the following datasets for our study:
     (\emph{reposiTUm}), Scopus, and Dimensions databases. Duplicates
     were removed, and only records containing English abstracts were
     retained. 
-  \item \textbf{AUB}: English abstracts of publications authored by the
-    American University of Beirut (AUB) from 2018 to October 2025. The data
-    were provided by the AUB University Libraries. To ensure comparability,
-    the roughly the same temporal window and language filters, only english
-    abstracts, as for the TU Wien corpus were applied.
   \item \textbf{20 Newsgroups}: The 20 Newsgroups dataset is a widely
     used benchmark corpus for 
     text classification and topic modeling. It consists of
@@ -245,12 +239,13 @@ We selected the following datasets for our study:
    \item \textbf{AG News}: A large-scale news dataset consisting of short
      article titles and descriptions categorized into four topics: World,
      Sports, Business, and Science/Technology.
-     \cite{agnews}. 
-  \item \textbf{dbpedia\_14}: This dataset contains short texts
-    labeled by 14 classes such as: as Company, Educational
-    Institution, Artist, Athlete, Office Holder, and Place
-    \cite{agnews}. It serves as a large-scale evaluation corpus for
-    general semantic representation.
+     \cite{agnews}.
+   \item \textbf{Theses-fr-en}: English abstracts of theses defended in
+    France: The French
+    government publishes by means of its open data initiative a
+    dataset containing all theses defended in France since 1985. We
+    filtered this dataset for english abstracts. This data was
+    obtained from the \emph{data.gouv.fr} platform.
 \end{itemize}
 Statistics about the different datasets are shown in table
 \ref{tab-dataset-statistics}.
@@ -260,14 +255,13 @@ Statistics about the different datasets are shown in table
   \begin{tabular}{l|rrr}
     & n(Texts) & mean & stddev \\
     \hline
-    theses-fr-en & 180939 & 261.89 & 112.70 \\
     TU Wien & 27506 & 168.85 & 73.79 \\
     AUB & 15982 & 237.73 & 98.24 \\
     20newsgroups & 11314 & 287.47 & 541.46 \\
     50k-movies & 50000 & 231.16 & 171.34 \\
     ag\_news & 127000 & 37.84 & 10.09 \\
-    dbpedia\_14 & 630000 & 46.13 & 22.46 
-  \end{tabular}
+    theses-fr-en & 180939 & 261.89 & 112.70 \\
+    \end{tabular}
   \caption{Statistics about the text corpa used. \emph{n(Texts)} is
     the number of unique texts in the dataset, \emph{mean} and
     \emph{stddev} represents the mean and standard deviation of the
@@ -414,14 +408,16 @@ token limit, was not attempted as MUSICA is currently in its test
 phase; instead, parallelism was achieved by distributing text files
 across multiple nodes for simultaneous inference.
 
-\subsection{Label Transcription}
+\subsection{Label Transcription} \label{sec-transcription}
 
 The theses-fr-en dataset is annotated and contains a research field
 (discipline, in French) for each abstract. However, these fields can
 in many cases be freely chosen by the thesis author, resulting in 13,599
-unique discipline labels. 
-To obtain a more coherent and standardized annotation, we used the
-gpt-oss-20b model to classify all 13,599 labels according to the
+unique discipline labels.
+In a first test we cross annotated these unique discipline labels into
+a binary classification of either humanities or natural sciences. We
+then proceeded to obtain a more coherent and standardized annotation,
+we used the gpt-oss-20b model to classify all 13,599 labels according to the
 OECD Fields of Science (FOS) 2002 classification \cite{oecd-fos}. 
 The resulting transcribed labels were then used to color
 the trees inferred from this dataset, allowing us to assess whether
@@ -599,7 +595,7 @@ broader topology of topic similarity within the dataset, all within a
 single interpretable representation. 
 \begin{figure*}
   \begin{center}
-    \includegraphics{20-newsgroups.pdf}
+    \includegraphics[scale=0.8]{20-newsgroups.pdf}
     \caption{Tree represenations of the 20 Newsgroups dataset.}
     \label{fig-20news-colored}
   \end{center}
@@ -670,7 +666,7 @@ colors (all articles in the cluster belong to the target label). The
 resulting trees are shown in Figure \ref{fig-ag-news}. 
 \begin{figure*}
   \begin{center}
-    \includegraphics{ag_news.pdf}
+    \includegraphics[scale=0.8]{ag_news.pdf}
     \caption{Trees built from the AG News dataset.}
     \label{fig-ag-news}
   \end{center}
@@ -691,6 +687,86 @@ label-specific structure. We attribute this to the general type of
 embedding models that we are using here and that business headlines
 frequently mention science and technology and vice versa in this
 dataset.
+
+\subsubsection{The French Theses Dataset: Theses-fr-en}
+
+To further evaluate whether our method can identify and organize broad
+and fine-grained disciplinary structure, we applied our tree-building
+pipeline to the Theses-fr-en dataset, which consists of
+English-language abstracts of French doctoral theses. The dataset
+contains author-supplied disciplinary annotations, but these labels
+are highly heterogeneous and unstandardized, yielding 13,599 unique
+descriptors. Therefore, as outlined in
+Section \ref{sec-transcription}, we first performed a cross-annotation
+step to obtain more tangible labels. 
+
+As an initial experiment, we mapped the original annotations to a
+binary classification: humanities versus natural sciences. The
+resulting tree clearly separated humanities theses from the remainder
+of the corpus, forming a large, coherent branch as shown in Figure
+\ref{fig-theses}A. Encouraged by this result, we proceeded to
+apply a more detailed transcription based on the OECD Fields of
+Science and Technology (FOS) 2002 classification
+scheme \cite{oecd-fos}. 
+
+In the tree three major branches are easily identifyable.
+The branch identified as “humanities” in the binary test
+contains predominantly Social Sciences (5) and Humanities (6)
+according to the FOS taxonomy. Social sciences, however, extend beyond
+this primary branch, with small isolated scattered clusters appearing
+throughout the tree. 
+
+The remaining two major branches contain the Natural Sciences (1), but
+with different structural emphases. Strikingly, Engineering and
+Technology (2) appears almost exclusively within the very large branch
+that occupies nearly the entire upper half of the tree
+outlined in Figure \ref{fig-theses}. In contrast, Medical and Health Sciences
+(3) predominantly occupy the smaller of the two natural-science
+branches, located on the left side of the tree. Examination of FOS
+subclasses shows that this medical branch also contains theses
+classified as Biological Sciences (1.6), reflecting their conceptual
+proximity. 
+
+The pattern of overlaps among FOS categories, particularly the fact
+that Natural Sciences (1) span both the engineering-dominant and the
+medical-dominant branches, highlights structural ambiguities inherent
+in the current FOS hierarchy. Although (1), (2), and (3) are defined
+as top-level categories, the tree suggests that Engineering and
+Technology (2) and Medical and Health Sciences (3) are more closely
+related to different subregions of the Natural Sciences (1) than to
+each other. 
+
+Moreover, the tree indicates that (2) and (3) merge into a common
+branch earlier than Social Sciences (5) and Humanities (6). After the
+social-science and humanities clade, numerous small and weakly
+structured clusters enter the main trunk of the tree (lower right
+quadrant), indicating a sizeable number of theses that form islands
+in the embedding space and are not well represented by broad
+disciplinary groupings. 
+
+All three major branches further subdivide into smaller subtrees
+toward their terminal regions. However, we did not find consistent
+evidence that these subtrees correspond cleanly to the FOS
+subclasses. This lack of correspondence suggests that the tree
+structure could support a data-driven reorganizing of disciplinary
+taxonomies, potentially capturing conceptual relationships that are
+absent, or obscured, in existing classification systems. This
+observation directly motivates the subsequent section of the paper. 
+\begin{figure*}
+  \begin{center}
+    \includegraphics[scale=0.8]{theses.pdf}
+    \caption{Tree generated from the French Theses theses-fr-en
+      dataset:\newline
+      A: Coloration according to binary classification Humanities and
+      Natural Sciences. \newline
+      B: Coloration according to the main groups of the OECD FOS
+      classification. \newline
+      C: Highlight of the subgroups of the Natural Sciences group
+      according to OECD FOS.
+    }
+    \label{fig-theses}
+  \end{center}
+\end{figure*}
 
 \subsubsection{Annotated Institutional Trees: TU Wien and AUB}
 
@@ -803,9 +879,152 @@ corpora.
 \section{Discussion}
 
 Herein we outline our hierachical density based tree construction
-method, applied onto LLM embeddings from large text corpora. 
+method, applied onto LLM embeddings from large text corpora. Applied on the
+abstracts of scientific publications published by the American
+University of Beirut and TU Wien, our method produces interpretable,
+multi-resolution trees that reveal how topics, semantic fields, and
+research areas are organized relative to each other.  By combining
+dimensionality reduction, adaptive multi-scale clustering, and
+large-context LLM-based annotation, we establish a pipeline capable of
+uncovering latent structure even in datasets lacking standardized or
+reliable taxonomies.
 
+\subsection{Insights from Benchmark Datasets}
 
+The benchmark datasets provide a reference for the applicapability of
+our method.
+
+Application of our method on the 20 newsgroups dataset
+revealed that the inferred tree was capable to recover intuitive
+relationships such as the proximity of sports-related topics,
+technical computing groups and overlaps between religious and
+political discussions. The hirachical approach further uncovered that
+sports related discussions are furhter elongated from the different
+groups only merging to the whole tree close its root.
+
+The AG news dataset similarly shows that World and Sports articles
+form well separated clades, but that Business and Science/Technology
+headlines exhibit a substantial overlap. This result can intuitively
+explained by the topical similarities between these two
+categories. Our tree based method as such creates an intrinsic
+semantic organization derived from LLM-embeddings rather then
+enforcing a predefined label boundary.
+
+The French doctoral theses dataset provided a further test for our
+algorithm. This dataset included ``discipline'' annotations. However
+these are rather abitrarly chosen and unstandarized. We transcribed
+these labels first into a binary annotation of either being part of
+natural sciences or humanities. To our surprise the theses abstracts
+of labeled humanities formed a clear clade in our tree. Encouraged by
+these findings we prograssed to transcribe the ``discipine'' labels
+into the OECD FOS annotation. We colored the tree according to it and
+found thanks to the hirachical structure that engineering and medical
+sciences merge earlier than either social sciences or humanities. A
+relationship that as such can not be derived from the FOS
+classification. At the same time we see that finer grained subtrees do
+correspond cleanly to the FOS subclasses, indicating that our inferred
+structure captures conceptual relationships that differ from
+established disciplinary boundaries.
+
+These observations support the idea that our tree-based represenations can
+serve a serve as a complementary, data-driven alternative to
+tranditional classification schemes.
+
+The IMDB 50K Reviews dataset yields a very homogeneous tree,
+reflecting that the embedding models used in this study
+are not able to distinguish the semantic differences between the movie
+reviews in a meaningful way. The labels of this dataset are largely
+dispersed accross the inferred tree, outlining the limitations of our
+approach, where the embeddings as outlined here do not encode as here
+sentiment or an other required topic separator.   
+
+\subsection{Insititution-Specific Research Landscapes}
+
+These datasets are at the core of this research as they illustrate
+that using our in here presented pipeline one can derive research
+classifications \emph{ab-initio}, under the given that a recent, well
+trained LLM-embedding model exists.
+In both datasets, from the American University in Beirut and from TU
+Wien the inferred trees recover dominant research areas, internal
+substructures and relationships between disciplines without relying on
+a predefined taxonomy.
+
+At AUB, the strong presence of medical and health-related research
+manifests as a large, cohesive clade branching into public health,
+nutrition, epidemiology, and related fields. The emergence of a
+well-defined humanities clade, in particularl in Middle Eastern Studies
+and Conflict Resolution, highlights the institution’s regional and
+cultural focus. The structural proximity between engineering and
+humanities observed in the tree suggests interdisciplinary connections
+that may not be apparent from administrative classifications alone.
+
+At TU Wien, the tree reflects the institution’s technical orientation,
+with prominent clades in materials science, quantum physics, information
+technology, and engineering. Despite the overall homogeneity of the
+corpus, the tree reveals meaningful internal organization.
+These findings demonstrate that the method can capture
+institution-specific research profiles and internal structure even in
+relatively focused corpora.
+
+\subsection{Methodological Considerations}
+
+Several methodological insights emerge from this study. First,
+dimensionality reduction via PCA plays a crucial role in enhancing tree
+structure. Using $L_2$ distances on a small number of principal
+components consistently yielded more articulated and interpretable
+trees than cosine distances in the full embedding space. This suggests
+that PCA acts as an effective feature-selection mechanism, suppressing
+noise and emphasizing the most informative semantic dimensions.
+
+Second, the adaptive multi-$\epsilon$ DBSCAN procedure enables the
+recovery of hierarchical structure without imposing a fixed density
+threshold. By progressively relaxing density constraints, the method
+naturally captures cluster mergers across scales, producing a tree
+structure analogous to a dendrogram but grounded in density-based
+clustering.
+
+Finally, while LLM-based annotation substantially improves
+interpretability, it also introduces limitations. Large clusters often
+receive overly general or unstable labels, reflecting current
+constraints of long-context inference. Nonetheless, even imperfect
+annotations provide valuable guidance for navigating and interpreting
+complex tree structures.
+
+\subsection{Limitations and Future Directions}
+
+The inferred trees are inherently constrained by the representational
+capacity of the embedding models. Semantic dimensions that are weakly
+encoded, such as fine-grained sentiment or subtle disciplinary
+distinctions, cannot be reliably recovered through clustering alone.
+Future work could explore domain-specific or task-adapted embedding
+models to address this limitation.
+
+In addition, annotation remains computationally expensive and sensitive
+to model variability. More robust strategies, such as hierarchical
+annotation, or summerization strategies tied together with annotation
+strategies may improve stability and scalability.
+
+Looking beyond text-based corpora, a particularly promising direction
+is the extension of this framework to other data modalities. The
+method itself is agnostic to the origin of the embeddings and could, in
+principle, be applied to image embeddings, audio embeddings, or
+multimodal representations. For example, trees inferred from image
+embeddings could reveal visual themes or stylistic groupings, while
+trees built from music embeddings might uncover genre structure,
+rhythmic patterns, or harmonic similarities. Applying the proposed
+approach to such modalities would allow for the exploration of latent
+structure in domains where hierarchical organization is often implicit
+rather than explicitly labeled.
+
+\section{Conclusion}
+Overall, our results indicate that hierarchical density clustering of
+LLM embeddings provides a powerful and flexible framework for mapping
+semantic structure in large text corpora. The method
+reveals meaningful relationships that both complement and challenge
+existing classification systems. By enabling data-driven,
+multi-resolution representations of textual domains, this approach
+offers new opportunities for research assessment, knowledge mapping,
+and other exploratory analysis.
 
 \bibliographystyle{ieeetr}
 \bibliography{bib}
