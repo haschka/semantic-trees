@@ -13,36 +13,15 @@
 \begin{document}
 \maketitle
 
-\section*{Abstract}
-
+\begin{abstract}
 Semantic text classification has undergone significant advances in
-recent years due to the rise of large language models (LLMs) and their
-high dimensional embeddings. While LLM-embeddings are frequently used to store
+recent years due to the rise of large language models (LLMs) and their high dimensional embeddings. While LLM-embeddings are frequently used to store
 and retrieve text by semantic similarity in vector databases, the
 global structure semantic relationships in text corpa often remains
-opaque.
-
-Herein we propose a nested density clustering
-approach, to infer hirachical trees of semantically related texts. The
-method starts by identifying texts of strong semantic similarity as it searches
-for dense clusters in LLM embedding space. As the density
-criterium is gradually relaxed, these dense
-clusters merge into more diffuse clusters, until the whole dataset is
-represented by a single cluster - the root of the tree. By embedding
-dense clusters into increasingly diffuse ones, we construct a tree
-structure that captures hierachical semantic relationships among texts.
-
-We outline how this approach can be used to classify textual data for
-abstracts of scientific abstracts as a case study. This enables the
-data-driven discovery research areas and their subfields without
-predefined categories. To evaluate the general applicability of the
-method, we further apply it to established benchmark datasets such as
-the 20 Newsgroups and IMDB 50k Movie Revies, demonstrating its
-robustness across domains. 
-
-Finally we discuss possible applications on scientometrics, topic
-evolution, highlighting how nested density trees can reveal semantic
-structure and evolution in textual datasets. 
+opaque. Herein we propose a nested density clustering
+approach, to infer hierarchical trees of semantically related texts. The method starts by identifying texts of strong semantic similarity as it searches for dense clusters in LLM embedding space. As the density metric is gradually relaxed, dense clusters merge into more diffuse clusters, until the whole dataset is represented by a single cluster: the root of the tree. By embedding dense clusters into increasingly diffuse ones, we construct a tree structure that captures hierachical semantic relationships among texts. We outline how this approach can be used to classify textual data for scientific abstracts as a case study. This enables a data-driven discovery research areas and their subfields without predefined categories. To evaluate the general applicability of the method, we further apply it to established benchmark datasets such as the 20 Newsgroups and IMDB 50k Movie Revies, demonstrating its
+robustness across domains.  Finally we discuss possible applications on scientometrics, topic evolution, highlighting how nested density trees can reveal semantic structure and evolution in textual datasets. 
+\end{abstract}
 
 \section{Background}
 
