@@ -13,15 +13,36 @@
 \begin{document}
 \maketitle
 
-\begin{abstract}
+\section*{Abstract}
+
 Semantic text classification has undergone significant advances in
-recent years due to the rise of large language models (LLMs) and their high dimensional embeddings. While LLM-embeddings are frequently used to store
+recent years due to the rise of large language models (LLMs) and their
+high dimensional embeddings. While LLM-embeddings are frequently used to store
 and retrieve text by semantic similarity in vector databases, the
-global structure semantic relationships in text corpa often remains
-opaque. Herein we propose a nested density clustering
-approach, to infer hierarchical trees of semantically related texts. The method starts by identifying texts of strong semantic similarity as it searches for dense clusters in LLM embedding space. As the density metric is gradually relaxed, dense clusters merge into more diffuse clusters, until the whole dataset is represented by a single cluster: the root of the tree. By embedding dense clusters into increasingly diffuse ones, we construct a tree structure that captures hierachical semantic relationships among texts. We outline how this approach can be used to classify textual data for scientific abstracts as a case study. This enables a data-driven discovery research areas and their subfields without predefined categories. To evaluate the general applicability of the method, we further apply it to established benchmark datasets such as the 20 Newsgroups and IMDB 50k Movie Revies, demonstrating its
-robustness across domains.  Finally we discuss possible applications on scientometrics, topic evolution, highlighting how nested density trees can reveal semantic structure and evolution in textual datasets. 
-\end{abstract}
+global structure semantic relationships in text corpora often remains
+opaque.
+
+Herein we propose a nested density clustering
+approach, to infer hierarchical trees of semantically related texts. The
+method starts by identifying texts of strong semantic similarity as it searches
+for dense clusters in LLM embedding space. As the density
+criterion is gradually relaxed, these dense
+clusters merge into more diffuse clusters, until the whole dataset is
+represented by a single cluster - the root of the tree. By embedding
+dense clusters into increasingly diffuse ones, we construct a tree
+structure that captures hierarchical semantic relationships among texts.
+
+We outline how this approach can be used to classify textual data for
+abstracts of scientific abstracts as a case study. This enables the
+data-driven discovery research areas and their subfields without
+predefined categories. To evaluate the general applicability of the
+method, we further apply it to established benchmark datasets such as
+the 20 Newsgroups and IMDB 50k Movie Reviews, demonstrating its
+robustness across domains. 
+
+Finally we discuss possible applications on scientometrics, topic
+evolution, highlighting how nested density trees can reveal semantic
+structure and evolution in textual datasets. 
 
 \section{Background}
 
@@ -139,26 +160,21 @@ cluster - the root of the tree. Figure
 conceptually. On the left, a text embedding space is shown, where each
 colored sphere represents a piece of text. On the right the tree built
 by the algorithm, from the text embedding space on the left, is shown. One can
-observe how the graped, and orange colored texts fusion as the
+observe how the grape, and orange colored texts fusion as the
 density criteria is relaxed into the blue ensemble, encompassing both
 clusters. At an intermediate step the green cluster stays separate,
-while the rose texts are not encompassed and seen as outliers. Finally
-as the density criterium is further relaxed all texts are only part of
-one cluster, represented in gray on the right tree-outline. 
+while the violet texts are not encompassed and seen as outliers. Finally, as the density criterion is further relaxed all texts are only part of one cluster, represented in gray on the right tree-outline. 
 \begin{figure*}
   \includegraphics{tree-from-space.pdf}
-  \caption{Tree building from a dataset reprented by its embedding
-    space. On the left an embedding space with clusters of different
-    densties is shown. One can see that the orange, and grape colored
-    clusters embed into a larger blue ensemble. A conceptual tree
+  \caption{Tree building from a dataset represented by its embedding
+    space. On the left, an embedding space with clusters of different densities is shown. One can see that the orange, and grape colored clusters embed into a larger blue ensemble. A conceptual tree
     built from such a two dimensional embedding space is shown on the right.}
   \label{fig-tree-from-space}
 \end{figure*}
-Our algorithm as such allows an organization for instance to show how
-documents within the organization are related, finding clusters of
-seperated by highly semantically similar documents, that merge, layer
+Our algorithm allows an organization for instance to show how
+documents within the organization are related. It initially finds separated clusters of highly semantically similar documents (the outer leafs of the tree), that merge, layer
 by layer together to more diffuse clusters, until all documents form a
-single cluster.
+single cluster (the root of the tree).
 
 We demonstrate our approach on several corpora, including collections
 of scientific abstracts and benchmark datasets such as 20 Newsgroups
@@ -338,11 +354,8 @@ cluster and was prompted to infer a unifying research field label.
 In cases where a cluster contained more than 1500 abstracts (exceeding
 the 600,000-token limit), we randomly sampled 1500 abstracts per
 processing chunk. For $n$ total abstracts in a cluster, the number of
-chunks $s$ was determined as:
-\begin{equation}
-  s = \frac{3n}{1500},
-  \label{eqn-sampling}
-\end{equation}
+chunks $s$ was determined as:$
+  s = \frac{3n}{1500}$,
 where the factor of 3 ensures oversampling to enhance topic stability.
 Each chunk was processed independently by the LLM to yield a candidate
 research field label. In less then 1 in 100 cases, the LLM did not
@@ -376,8 +389,7 @@ the different paths that annotation might undergo is outlined in Figure
 
 Tree annotation is computationally intensive. The AUB tree required
 annotating 33{,}862 text files, while the TU Wien tree required
-62{,}012, including oversampling according to
-Equation~\ref{eqn-sampling}. Inference was performed using the
+62{,}012, including oversampling. Inference was performed using the
 \texttt{llama.cpp} \cite{llama-cpp} engine on the MUSICA supercomputer
 (Austria). Up to 80 NVIDIA H100 GPUs were employed concurrently during
 annotation. Each compute node with four H100 GPUs (80~GB VRAM each)
@@ -575,7 +587,7 @@ single interpretable representation.
 \begin{figure*}
   \begin{center}
     \includegraphics[scale=0.8]{20-newsgroups.pdf}
-    \caption{Tree represenations of the 20 Newsgroups dataset.}
+    \caption{Representations of the tree obtained from the 20 Newsgroups dataset. Trees were built from the first two principal components obtained from Qwen3-Embedding-8B \cite{qwen3embedding} embeddings. Parameters used to build tree were: initial $\epsilon = 0.0039$, $\Delta\epsilon = 0.00001$, $\mathrm{minpts} = 5$.}
     \label{fig-20news-colored}
   \end{center}
 \end{figure*}
@@ -627,7 +639,7 @@ genres from this dataset seems infeasible with current methods.
 \begin{figure}
   \begin{center}
     \includegraphics{50-pos-neg.pdf}
-    \caption{The IMDB 50K Reviews dataset colored by sentiments.}
+    \caption{The IMDB 50K Reviews dataset colored by sentiments: The tree was built using the first two principal components derived from SFR-Embedding-Mistral \cite{SFRembedding} embeddings. Parameters yield to the tree building algorithm were: initial $\epsilon = 0.5$, $\Delta\epsilon = 0.0001$, $\mathrm{minpts} = 5$.}
     \label{fig-50k-news-colored}
   \end{center}
 \end{figure}
@@ -646,13 +658,13 @@ resulting trees are shown in Figure \ref{fig-ag-news}.
 \begin{figure*}
   \begin{center}
     \includegraphics[scale=0.8]{ag_news.pdf}
-    \caption{Trees built from the AG News dataset.}
+    \caption{The tree obtained from the AG News dataset in different colorations. The tree shown was inferred from the first two principal components derived from SFR-Embedding-Mistral \cite{SFRembedding} embeddings. Parameters yield to the tree building algorithm were: initial $\epsilon = 0.225$, $\Delta\epsilon = 0.0005$, and $\mathrm{minpts} = 5$}
     \label{fig-ag-news}
   \end{center}
 \end{figure*}
 We observe that the world and sports categories form
 clearly separable structures: both branch off early from the root of the
-tree, resulting in two well-defined clades with only minimal
+tree, resulting in two well-defined subtrees with only minimal
 contamination from other labels. Around the root, however, a small number
 of scattered articles appear, suggesting that certain headlines are not
 easily classifiable by the embedding models. These headlines seem to be
@@ -717,7 +729,7 @@ each other.
 
 Moreover, the tree indicates that (2) and (3) merge into a common
 branch earlier than Social Sciences (5) and Humanities (6). After the
-social-science and humanities clade, numerous small and weakly
+social-science and humanities subtree, numerous small and weakly
 structured clusters enter the main trunk of the tree (lower right
 quadrant), indicating a sizeable number of theses that form islands
 in the embedding space and are not well represented by broad
@@ -735,13 +747,14 @@ observation directly motivates the subsequent section of the paper.
   \begin{center}
     \includegraphics[scale=0.8]{theses.pdf}
     \caption{Tree generated from the French Theses theses-fr-en
-      dataset:\newline
-      A: Coloration according to binary classification Humanities and
+      dataset using the first two principal components obtained from the embeddings yield by the SFR-Embedding-Mistral \cite{SFRembedding} model:\newline
+      \textbf{A}: Coloration according to binary classification Humanities and
       Natural Sciences. \newline
-      B: Coloration according to the main groups of the OECD FOS
+      \textbf{B}: Coloration according to the main groups of the OECD FOS
       classification. \newline
-      C: Highlight of the subgroups of the Natural Sciences group
-      according to OECD FOS.
+      \textbf{C}: Highlight of the subgroups of the Natural Sciences group
+      according to OECD FOS.\newline
+      Parameters for tree building were: initial $\epsilon = 0.23$, $\Delta\epsilon = 0.001$, $\mathrm{minpts} = 5$.
     }
     \label{fig-theses}
   \end{center}
@@ -767,29 +780,27 @@ method can capture meaningful organizational patterns without relying
 on predefined categories.
 \begin{itemize}
 
-\item  American University of Beirut (AUB)
-
-  At the American University of Beirut, medicine and health-related
+\item  At the American University of Beirut, medicine and health-related
   disciplines dominate the research corpus, reflecting the strong
   presence of the university hospital. This dominance is visible in the
   tree structure, where the entire upper half of the circular tree forms
-  the largest and most cohesive clade. Within this region, several
+  the largest and most cohesive subtree. Within this region, several
   well-defined subbranches correspond to specific healthcare domains,
   including health and nutrition, health policy and systems research,
   and public health and epidemiology.
 
-  A distinct humanities clade is also present, characterized by numerous
+  A distinct humanities subtree is also present, characterized by numerous
   subbranches labeled as Middle Eastern Studies and Conflict
-  Resolution. In addition, an engineering clade—covering engineering,
-  physics, and mathematics—is clearly visible. Notably, this engineering
-  clade merges with the humanities clade at a higher density than with the
-  medical clade, suggesting a closer structural relationship between
+  Resolution. In addition, an engineering subtree that covers engineering,
+  physics, and mathematics, is clearly visible. Notably, this engineering
+  subtree merges with the humanities subtree at a higher density than with the
+  medical subtree, suggesting a closer structural relationship between
   engineering and humanities research topics within this corpus than might
-  be expected.
+  be expected, which might be characteristic of the university's liberal arts tradition.
 
-  To the left of these major clades, smaller clusters related to both
+  To the left of these major subtrees, smaller clusters related to both
   engineering and humanities fields branch into the tree and eventually
-  merge with the broader medical clade. Beyond this point, several
+  merge with the broader medical subtree. Beyond this point, several
   near-linear terminal branches from a wide range of disciplines connect
   to the tree as outliers before joining the main structure.
   
@@ -803,15 +814,15 @@ on predefined categories.
   The tree structure for TU Wien differs markedly from that of AUB. As a
   technical university, TU Wien has a more focused research portfolio,
   which results in a tree that appears more homogeneous overall.
-  Nevertheless, the tree reveals several large and meaningful clades that
+  Nevertheless, the tree reveals several large and meaningful subtrees that
   highlight the institution’s disciplinary strengths.
   
-  At the upper right of the tree, we observe a clade corresponding to
+  At the upper right of the tree, we observe a subtree corresponding to
   quantum mechanics, quantum optics, and quantum-scale materials.
-  This region merges smoothly into a broad materials science clade,
+  This region merges smoothly into a broad materials science subtree,
   which occupies much of the upper left quadrant of the circular tree.
   
-  Also in the upper left quadrant is a large clade corresponding to
+  Also in the upper left quadrant is a large subtree corresponding to
   information technology and computer science, which subdivides into
   numerous smaller branches. Further branches that merge into the main
   tree at later stages correspond to nanotechnology and semiconductor
@@ -830,7 +841,9 @@ on predefined categories.
 \begin{figure*}
   \begin{center}
     \includegraphics{aub-tree.pdf}
-    \caption{Tree generated from the AUB dataset.}
+    \caption{Tree generated from the AUB dataset: The tree shown was inferred from the first two principal components obtained from Qwen3-Embedding-8B
+    \cite{qwen3embedding} model embeddings. The tree was built with the following parameters: initial $\epsilon = 0.0045$,
+    $\Delta\epsilon = 0.00001$ and $\mathrm{minpts} = 5$.}
     \label{fig-aub-tree}
   \end{center}
 \end{figure*}
@@ -838,7 +851,9 @@ on predefined categories.
 \begin{figure*}
   \begin{center}
     \includegraphics{tuwien-tree.pdf}
-    \caption{Tree generated from the TU Wien dataset.}
+    \caption{Tree generated from the TU Wien dataset: The tree shown was inferred from the first two principal components obtained from Qwen3-Embedding-8B
+    \cite{qwen3embedding} model embeddings. The tree was built with the following parameters: initial $\epsilon = 0.0028$,
+    $\Delta\epsilon = 0.000001$ and $\mathrm{minpts} = 5$.}
     \label{fig-tuwien-tree}
   \end{center}
 \end{figure*}
@@ -857,7 +872,7 @@ corpora.
 
 \section{Discussion}
 
-Herein we outline our hierachical density based tree construction
+Herein we outline our hierarchical density based tree construction
 method, applied onto LLM embeddings from large text corpora. Applied on the
 abstracts of scientific publications published by the American
 University of Beirut and TU Wien, our method produces interpretable,
@@ -870,19 +885,19 @@ reliable taxonomies.
 
 \subsection{Insights from Benchmark Datasets}
 
-The benchmark datasets provide a reference for the applicapability of
+The benchmark datasets provide a reference for the applicability of
 our method.
 
 Application of our method on the 20 newsgroups dataset
 revealed that the inferred tree was capable to recover intuitive
 relationships such as the proximity of sports-related topics,
 technical computing groups and overlaps between religious and
-political discussions. The hirachical approach further uncovered that
-sports related discussions are furhter elongated from the different
+political discussions. The hierarchical approach further uncovered that
+sports related discussions are further elongated from the different
 groups only merging to the whole tree close its root.
 
 The AG news dataset similarly shows that World and Sports articles
-form well separated clades, but that Business and Science/Technology
+form well separated subtrees, but that Business and Science/Technology
 headlines exhibit a substantial overlap. This result can intuitively
 explained by the topical similarities between these two
 categories. Our tree based method as such creates an intrinsic
@@ -891,33 +906,33 @@ enforcing a predefined label boundary.
 
 The French doctoral theses dataset provided a further test for our
 algorithm. This dataset included ``discipline'' annotations. However
-these are rather abitrarly chosen and unstandarized. We transcribed
+these are rather arbitrarily chosen and unstandarized. We transcribed
 these labels first into a binary annotation of either being part of
 natural sciences or humanities. To our surprise the theses abstracts
-of labeled humanities formed a clear clade in our tree. Encouraged by
-these findings we prograssed to transcribe the ``discipine'' labels
+of labeled humanities formed a clear subtree in our tree. Encouraged by
+these findings we progressed to transcribe the ``discipine'' labels
 into the OECD FOS annotation. We colored the tree according to it and
-found thanks to the hirachical structure that engineering and medical
+found thanks to the hierarchical structure that engineering and medical
 sciences merge earlier than either social sciences or humanities. A
-relationship that as such can not be derived from the FOS
+relationship that as such cannot be derived from the FOS
 classification. At the same time we see that finer grained subtrees do
 correspond cleanly to the FOS subclasses, indicating that our inferred
 structure captures conceptual relationships that differ from
 established disciplinary boundaries.
 
-These observations support the idea that our tree-based represenations can
-serve a serve as a complementary, data-driven alternative to
-tranditional classification schemes.
+These observations support the idea that our tree-based representations can
+serve as a complementary, data-driven alternative to
+traditional classification schemes.
 
 The IMDB 50K Reviews dataset yields a very homogeneous tree,
 reflecting that the embedding models used in this study
 are not able to distinguish the semantic differences between the movie
 reviews in a meaningful way. The labels of this dataset are largely
-dispersed accross the inferred tree, outlining the limitations of our
+dispersed across the inferred tree, outlining the limitations of our
 approach, where the embeddings as outlined here do not encode as here
 sentiment or an other required topic separator.   
 
-\subsection{Insititution-Specific Research Landscapes}
+\subsection{Institution-Specific Research Landscapes}
 
 These datasets are at the core of this research as they illustrate
 that using our in here presented pipeline one can derive research
@@ -929,16 +944,16 @@ substructures and relationships between disciplines without relying on
 a predefined taxonomy.
 
 At AUB, the strong presence of medical and health-related research
-manifests as a large, cohesive clade branching into public health,
+manifests as a large, cohesive subtree branching into public health,
 nutrition, epidemiology, and related fields. The emergence of a
-well-defined humanities clade, in particularl in Middle Eastern Studies
+well-defined humanities subtree, in particular in Middle Eastern Studies
 and Conflict Resolution, highlights the institution’s regional and
 cultural focus. The structural proximity between engineering and
 humanities observed in the tree suggests interdisciplinary connections
 that may not be apparent from administrative classifications alone.
 
 At TU Wien, the tree reflects the institution’s technical orientation,
-with prominent clades in materials science, quantum physics, information
+with prominent subtrees in materials science, quantum physics, information
 technology, and engineering. Despite the overall homogeneity of the
 corpus, the tree reveals meaningful internal organization.
 These findings demonstrate that the method can capture
@@ -965,7 +980,7 @@ clustering.
 Finally, while LLM-based annotation substantially improves
 interpretability, it also introduces limitations. Large clusters often
 receive overly general or unstable labels, reflecting current
-constraints of long-context inference. Nonetheless, even imperfect
+constraints of long-context inference. However, even imperfect
 annotations provide valuable guidance for navigating and interpreting
 complex tree structures.
 
