@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree of Life View - Genealogy of Knowledge</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #fff;
+            color: #333;
+            overflow: hidden;
+        }
+
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 100;
+            font-size: 13px;
+            max-width: 260px;
+        }
+
+        #controls h3 {
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+
+        #controls select {
+            width: 100%;
+            margin: 5px 0 10px;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #controls label {
+            display: block;
+            margin: 10px 0 3px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        #controls input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        #controls .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        #controls .checkbox-label input {
+            width: auto;
+        }
+
+        /* View switcher */
+        .view-switcher {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .view-btn {
+            flex: 1;
+            padding: 8px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            color: #666;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .view-btn:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .view-btn.active {
+            background: #4a90d9;
+            color: #fff;
+            border-color: #4a90d9;
+        }
+
+        .help-text {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            font-size: 11px;
+            color: #888;
+            line-height: 1.5;
+        }
+
+        #visualization {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1px;
+        }
+
+        .link-extension {
+            fill: none;
+            stroke: #eee;
+            stroke-width: 0.5px;
+        }
+
+        .link.highlight,
+        .link-extension.highlight {
+            stroke: #333;
+            stroke-width: 2px;
+        }
+
+        .leaf-label {
+            font-size: 8px;
+            fill: #555;
+        }
+
+        .leaf-label.highlight {
+            font-weight: bold;
+            fill: #000;
+        }
+
+        .inner-label {
+            font-size: 9px;
+            fill: #333;
+            font-weight: 600;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: #666;
+            z-index: 200;
+        }
+
+        #stats {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #888;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+        }
+
+        #legend {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            font-size: 11px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        #legend h4 {
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h3>Genealogy of Knowledge</h3>
+
+        <label>Dataset</label>
+        <select id="dataset-select">
+            <option value="aub-scholarworks">AUB ScholarWorks</option>
+            <option value="20-newsgroups">20 Newsgroups</option>
+            <option value="theses-sampled">French Theses (Sample)</option>
+        </select>
+
+        <div class="view-switcher">
+            <a href="index.html" class="view-btn">Circular Tree</a>
+            <span class="view-btn active">Tree of Life</span>
+        </div>
+
+        <label>Inner Radius: <span id="radius-value">1500</span></label>
+        <input type="range" id="radius-slider" min="300" max="4000" step="100" value="1500">
+
+        <label>Label Font Size: <span id="font-value">8</span>px</label>
+        <input type="range" id="font-slider" min="4" max="14" step="1" value="8">
+
+        <label>Show every Nth label: <span id="skip-value">5</span></label>
+        <input type="range" id="skip-slider" min="1" max="20" step="1" value="5">
+
+        <label class="checkbox-label">
+            <input type="checkbox" id="show-extensions" checked>
+            Show extension lines
+        </label>
+
+        <label class="checkbox-label">
+            <input type="checkbox" id="show-inner-labels">
+            Show branch labels
+        </label>
+
+        <div class="help-text">
+            Hover over labels to highlight ancestry path.<br>
+            Scroll to zoom, drag to pan.
+        </div>
+    </div>
+
+    <div id="loading">Loading tree data...</div>
+    <div id="stats"></div>
+    <div id="legend"></div>
+    <svg id="visualization"></svg>
+
+    <script>
+        let treeData, clusterMapping;
+        let svg, g, zoom;
+        let currentDataset = 'aub-scholarworks';
+
+        // Configuration - paths relative to website folder
+        const config = {
+            datasets: {
+                'aub-scholarworks': {
+                    tree: 'data/aub-scholarworks-tree.json',
+                    mapping: 'data/aub-scholarworks-mapping.json'
+                },
+                '20-newsgroups': {
+                    tree: 'data/20-newsgroups-tree.json',
+                    mapping: 'data/20-newsgroups-mapping.json'
+                },
+                'theses-sampled': {
+                    tree: 'data/theses-sampled-tree.json',
+                    mapping: 'data/theses-sampled-mapping.json'
+                },
+            }
+        };
+
+        // Color palette for top-level branches
+        const branchColors = d3.scaleOrdinal()
+            .range([
+                '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00',
+                '#ffff33', '#a65628', '#f781bf', '#999999', '#66c2a5',
+                '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f'
+            ]);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDataset('aub-scholarworks');
+
+            document.getElementById('dataset-select').addEventListener('change', (e) => {
+                loadDataset(e.target.value);
+            });
+
+            document.getElementById('radius-slider').addEventListener('input', (e) => {
+                document.getElementById('radius-value').textContent = e.target.value;
+            });
+            document.getElementById('radius-slider').addEventListener('change', render);
+
+            document.getElementById('font-slider').addEventListener('input', (e) => {
+                document.getElementById('font-value').textContent = e.target.value;
+            });
+            document.getElementById('font-slider').addEventListener('change', render);
+
+            document.getElementById('skip-slider').addEventListener('input', (e) => {
+                document.getElementById('skip-value').textContent = e.target.value;
+            });
+            document.getElementById('skip-slider').addEventListener('change', render);
+
+            document.getElementById('show-extensions').addEventListener('change', render);
+            document.getElementById('show-inner-labels').addEventListener('change', render);
+        });
+
+        function loadDataset(name) {
+            currentDataset = name;
+            const dataset = config.datasets[name];
+            document.getElementById('loading').style.display = 'block';
+
+            Promise.all([
+                fetch(dataset.tree).then(r => r.json()),
+                fetch(dataset.mapping).then(r => r.json()).catch(() => ({}))
+            ])
+            .then(([tree, mapping]) => {
+                treeData = tree;
+                clusterMapping = mapping;
+                document.getElementById('loading').style.display = 'none';
+                render();
+            })
+            .catch(error => {
+                document.getElementById('loading').textContent = 'Error: ' + error.message;
+            });
+        }
+
+        function getNodeLabel(name) {
+            if (!name || name === 'node' || name.match(/^L\d+C\d+/)) {
+                return null;
+            }
+            const cleanName = name.replace(/_+$/, '').replace(/\s+$/, '');
+            const mapping = clusterMapping[name] || clusterMapping[cleanName];
+            return mapping?.label || cleanName.replace(/_/g, ' ');
+        }
+
+        function getNodeDocCount(name) {
+            if (!name) return 0;
+            const cleanName = name.replace(/_+$/, '').replace(/\s+$/, '');
+            const mapping = clusterMapping[name] || clusterMapping[cleanName];
+            return mapping?.doc_count || 0;
+        }
+
+        // Get top-level branch for coloring
+        function getTopBranch(d) {
+            let node = d;
+            while (node.parent && node.parent.parent) {
+                node = node.parent;
+            }
+            return node.data.name || 'root';
+        }
+
+        function render() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const innerRadius = parseInt(document.getElementById('radius-slider').value);
+            const outerRadius = innerRadius + 30;
+            const fontSize = parseInt(document.getElementById('font-slider').value);
+            const labelSkip = parseInt(document.getElementById('skip-slider').value);
+            const showExtensions = document.getElementById('show-extensions').checked;
+            const showInnerLabels = document.getElementById('show-inner-labels').checked;
+
+            // Clear existing
+            d3.select('#visualization').selectAll('*').remove();
+
+            svg = d3.select('#visualization')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Zoom behavior
+            zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+
+            svg.call(zoom);
+
+            g = svg.append('g')
+                .attr('transform', `translate(${width/2},${height/2})`);
+
+            // Create hierarchy
+            const root = d3.hierarchy(treeData, d => d.children);
+
+            // Tree layout
+            const cluster = d3.cluster()
+                .size([360, innerRadius])
+                .separation((a, b) => 1);
+
+            cluster(root);
+
+            // Assign colors based on top-level branches
+            const topBranches = new Set();
+            root.leaves().forEach(d => topBranches.add(getTopBranch(d)));
+            branchColors.domain([...topBranches]);
+
+            // Stats
+            const leaves = root.leaves();
+            document.getElementById('stats').innerHTML =
+                `Nodes: ${root.descendants().length.toLocaleString()} | Leaves: ${leaves.length.toLocaleString()}`;
+
+            // Build legend from top branches
+            const legendDiv = document.getElementById('legend');
+            legendDiv.innerHTML = '<h4>Categories</h4>';
+
+            // Get top branches with labels
+            const topBranchLabels = [];
+            if (root.children) {
+                root.children.forEach(child => {
+                    const label = getNodeLabel(child.data.name) || child.data.name;
+                    const color = branchColors(child.data.name);
+                    topBranchLabels.push({ label, color, name: child.data.name });
+                });
+            }
+
+            topBranchLabels.slice(0, 10).forEach(({ label, color }) => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `<div class="legend-color" style="background: ${color}"></div><span>${label.substring(0, 25)}</span>`;
+                legendDiv.appendChild(item);
+            });
+
+            // Draw links using step path (arc then radial line)
+            const linkGroup = g.append('g').attr('class', 'links');
+
+            // Link path generator - step style like phylogenetic trees
+            function linkStep(startAngle, startRadius, endAngle, endRadius) {
+                const c0 = Math.cos(startAngle = (startAngle - 90) * Math.PI / 180);
+                const s0 = Math.sin(startAngle);
+                const c1 = Math.cos(endAngle = (endAngle - 90) * Math.PI / 180);
+                const s1 = Math.sin(endAngle);
+
+                // Arc at parent radius, then radial line to child
+                return `M${startRadius * c0},${startRadius * s0}` +
+                       `A${startRadius},${startRadius} 0 0 ${endAngle > startAngle ? 1 : 0} ${startRadius * c1},${startRadius * s1}` +
+                       `L${endRadius * c1},${endRadius * s1}`;
+            }
+
+            // Draw links
+            linkGroup.selectAll('.link')
+                .data(root.links())
+                .join('path')
+                .attr('class', 'link')
+                .attr('d', d => linkStep(d.source.x, d.source.y, d.target.x, d.target.y))
+                .style('stroke', d => branchColors(getTopBranch(d.target)));
+
+            // Draw extension lines (from leaf to outer radius for labels)
+            if (showExtensions) {
+                const extensionGroup = g.append('g').attr('class', 'extensions');
+
+                extensionGroup.selectAll('.link-extension')
+                    .data(leaves)
+                    .join('path')
+                    .attr('class', 'link-extension')
+                    .attr('d', d => {
+                        const angle = (d.x - 90) * Math.PI / 180;
+                        const x1 = d.y * Math.cos(angle);
+                        const y1 = d.y * Math.sin(angle);
+                        const x2 = outerRadius * Math.cos(angle);
+                        const y2 = outerRadius * Math.sin(angle);
+                        return `M${x1},${y1}L${x2},${y2}`;
+                    });
+            }
+
+            // Draw leaf labels around perimeter
+            const labelGroup = g.append('g').attr('class', 'labels');
+
+            leaves.forEach((d, i) => {
+                if (i % labelSkip !== 0) return;
+
+                const label = getNodeLabel(d.data.name);
+                if (!label) return;
+
+                const angle = d.x;
+                const flip = angle > 180;
+                const displayLabel = label.length > 30 ? label.substring(0, 30) + '...' : label;
+
+                const text = labelGroup.append('text')
+                    .attr('class', 'leaf-label')
+                    .attr('transform', `rotate(${angle - 90}) translate(${outerRadius + 4},0) rotate(${flip ? 180 : 0})`)
+                    .attr('text-anchor', flip ? 'end' : 'start')
+                    .attr('dy', '0.31em')
+                    .style('font-size', fontSize + 'px')
+                    .style('fill', branchColors(getTopBranch(d)))
+                    .text(displayLabel)
+                    .datum(d);
+
+                // Hover to highlight ancestry
+                text.on('mouseenter', function(event) {
+                    highlightAncestry(d, true);
+                    d3.select(this).classed('highlight', true);
+                })
+                .on('mouseleave', function() {
+                    highlightAncestry(d, false);
+                    d3.select(this).classed('highlight', false);
+                });
+            });
+
+            // Inner branch labels (for significant nodes)
+            if (showInnerLabels) {
+                const innerLabelGroup = g.append('g').attr('class', 'inner-labels');
+
+                root.descendants().forEach(d => {
+                    if (!d.children) return; // Skip leaves
+
+                    const label = getNodeLabel(d.data.name);
+                    const docCount = getNodeDocCount(d.data.name);
+
+                    // Only show labels for significant branches
+                    if (!label || docCount < 100) return;
+
+                    const angle = d.x;
+                    const flip = angle > 180;
+
+                    innerLabelGroup.append('text')
+                        .attr('class', 'inner-label')
+                        .attr('transform', `rotate(${angle - 90}) translate(${d.y - 5},0) rotate(${flip ? 180 : 0})`)
+                        .attr('text-anchor', flip ? 'start' : 'end')
+                        .attr('dy', '0.31em')
+                        .style('font-size', '9px')
+                        .text(label.length > 20 ? label.substring(0, 20) + '...' : label);
+                });
+            }
+
+            // Center view
+            const scale = Math.min(width, height) / (outerRadius * 2 + 100);
+            svg.call(zoom.transform, d3.zoomIdentity.translate(width/2, height/2).scale(Math.min(scale, 1)));
+        }
+
+        function highlightAncestry(d, highlight) {
+            // Get all ancestors
+            const ancestors = d.ancestors();
+            const ancestorSet = new Set(ancestors);
+
+            // Highlight links along the path
+            g.selectAll('.link')
+                .classed('highlight', link => {
+                    if (!highlight) return false;
+                    return ancestorSet.has(link.source) && ancestorSet.has(link.target);
+                });
+
+            // Highlight extension line
+            g.selectAll('.link-extension')
+                .classed('highlight', ext => {
+                    if (!highlight) return false;
+                    return ext === d;
+                });
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (treeData) render();
+        });
+    </script>
+</body>
+</html>
