@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Trees - Document Clustering Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        #app {
+            display: flex;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 380px;
+            background: #16213e;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: width 0.3s ease;
+        }
+
+        #sidebar.collapsed {
+            width: 50px;
+        }
+
+        #sidebar.collapsed .sidebar-content {
+            display: none;
+        }
+
+        #sidebar-toggle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 30px;
+            height: 30px;
+            background: #0f3460;
+            border: 1px solid #1a1a4e;
+            color: #eee;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        #sidebar-toggle:hover {
+            background: #e94560;
+        }
+
+        .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #sidebar-header {
+            padding: 15px 20px;
+            padding-left: 50px;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        #sidebar-header h2 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #e94560;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 6px 10px;
+            background: #0f3460;
+            border: 1px solid #1a1a4e;
+            color: #eee;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            text-align: right;
+            font-size: 0.85em;
+            color: #e94560;
+            margin-top: 4px;
+        }
+
+        /* Collapsible sections */
+        .collapsible-section {
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #0f3460;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapsible-header:hover {
+            background: #1a3a70;
+        }
+
+        .collapsible-header h4 {
+            font-size: 0.85em;
+            color: #888;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .collapsible-toggle {
+            color: #888;
+            font-size: 0.8em;
+            transition: transform 0.2s;
+        }
+
+        .collapsible-section.collapsed .collapsible-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            padding: 15px 20px;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsible-section.collapsed .collapsible-content {
+            display: none;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.85em;
+        }
+
+        .stat-label { color: #888; }
+        .stat-value { color: #e94560; font-weight: 600; }
+
+        /* Articles panel */
+        #articles-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 20px;
+            background: #0d1527;
+        }
+
+        #articles-panel h3 {
+            color: #4ecdc4;
+            margin-bottom: 12px;
+            font-size: 1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #articles-panel .article-count {
+            font-size: 0.8em;
+            color: #888;
+            font-weight: normal;
+        }
+
+        .article-item {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #16213e;
+            border-radius: 6px;
+            border-left: 3px solid #4ecdc4;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .article-item:hover {
+            background: #1a2a4e;
+        }
+
+        .article-category {
+            font-size: 0.7em;
+            text-transform: uppercase;
+            color: #e94560;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .article-title {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .article-authors {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-bottom: 4px;
+            font-style: italic;
+        }
+
+        .article-date {
+            font-size: 0.75em;
+            color: #888;
+            margin-bottom: 6px;
+        }
+
+        .article-content {
+            font-size: 0.85em;
+            color: #ccc;
+            line-height: 1.5;
+            max-height: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .article-doi {
+            font-size: 0.75em;
+            margin-top: 6px;
+        }
+
+        .article-id {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .no-articles {
+            color: #666;
+            font-size: 0.9em;
+            font-style: italic;
+            padding: 20px 0;
+        }
+
+        .load-more-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: #0f3460;
+            border: 1px solid #1a1a4e;
+            color: #4ecdc4;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .load-more-btn:hover {
+            background: #1a3a70;
+        }
+
+        .selected-node {
+            stroke: #ffcc00 !important;
+            stroke-width: 2px !important;
+        }
+
+        .info-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .info-label {
+            font-size: 0.75em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 0.9em;
+            word-break: break-word;
+        }
+
+        #main {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #0d0d1a;
+        }
+
+        #visualization {
+            width: 100%;
+            height: 100%;
+        }
+
+        .link {
+            fill: none;
+            stroke-width: 0.5px;
+            stroke-opacity: 0.4;
+        }
+
+        .node circle {
+            stroke-width: 0.5px;
+        }
+
+        .node.leaf circle {
+            fill: #4ecdc4;
+            stroke: none;
+        }
+
+        .node.internal circle {
+            fill: #e94560;
+            stroke: none;
+        }
+
+        .node-label {
+            font-size: 8px;
+            fill: #ccc;
+            pointer-events: none;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        #loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #0f3460;
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(22, 33, 62, 0.95);
+            border: 1px solid #e94560;
+            border-radius: 6px;
+            pointer-events: none;
+            font-size: 12px;
+            max-width: 280px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .tooltip strong { color: #e94560; }
+
+        #zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        #help-overlay {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(15, 52, 96, 0.9);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            color: #ccc;
+            line-height: 1.6;
+            z-index: 10;
+        }
+
+        #help-overlay kbd {
+            background: #1a1a4e;
+        }
+
+        #zoom-controls button {
+            width: 36px;
+            height: 36px;
+            font-size: 1.1em;
+            padding: 0;
+            background: #0f3460;
+            border: 1px solid #1a1a4e;
+            color: #eee;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #zoom-controls button:hover {
+            background: #e94560;
+        }
+
+        .legend {
+            padding: 8px 20px;
+            display: flex;
+            gap: 15px;
+            background: #0f3460;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        kbd {
+            display: inline-block;
+            padding: 2px 5px;
+            font-family: monospace;
+            font-size: 10px;
+            background: #0f3460;
+            border: 1px solid #1a1a4e;
+            border-radius: 3px;
+        }
+
+        /* Selected cluster name display */
+        #selected-cluster {
+            padding: 10px 20px;
+            background: #1a2a4e;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        #selected-cluster .cluster-name {
+            font-size: 1em;
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+
+        #selected-cluster .cluster-info {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="sidebar">
+            <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+
+            <div class="sidebar-content">
+                <!-- Header with dataset selector -->
+                <div id="sidebar-header">
+                    <h2>Semantic Trees</h2>
+                    <div class="control-group">
+                        <label>Dataset</label>
+                        <select id="dataset-select">
+                            <option value="aub-scholarworks">AUB ScholarWorks</option>
+                            <option value="20-newsgroups">20 Newsgroups</option>
+                            <option value="theses-sampled">French Theses (Sample)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Selected cluster display -->
+                <div id="selected-cluster" style="display: none;">
+                    <div class="cluster-name"></div>
+                    <div class="cluster-info"></div>
+                </div>
+
+                <!-- Articles panel - main content -->
+                <div id="articles-panel">
+                    <h3>Articles <span class="article-count"></span></h3>
+                    <p class="no-articles">Click on a node in the tree to see its articles</p>
+                </div>
+
+                <!-- Collapsible: Visualization Options -->
+                <div class="collapsible-section collapsed">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <h4>Visualization Options</h4>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="control-group">
+                            <label>Tree Radius</label>
+                            <input type="range" id="radius-slider" min="400" max="3000" step="100" value="1500">
+                            <div class="slider-value" id="radius-value">1500px</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Node Size</label>
+                            <input type="range" id="node-slider" min="0.3" max="3" step="0.1" value="1">
+                            <div class="slider-value" id="node-value">1px</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Line Width</label>
+                            <input type="range" id="line-slider" min="0.1" max="2" step="0.1" value="0.3">
+                            <div class="slider-value" id="line-value">0.3px</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="show-labels" checked style="width: auto; margin-right: 8px;">
+                                Show leaf labels
+                            </label>
+                        </div>
+
+                        <div class="control-group" id="label-skip-group">
+                            <label>Show every Nth label</label>
+                            <input type="range" id="label-skip-slider" min="1" max="20" step="1" value="10">
+                            <div class="slider-value" id="label-skip-value">10</div>
+                        </div>
+
+                        <div class="control-group" id="label-font-group">
+                            <label>Label Font Size</label>
+                            <input type="range" id="label-font-slider" min="2" max="16" step="1" value="4">
+                            <div class="slider-value" id="label-font-value">4px</div>
+                        </div>
+
+                        <div class="control-group" id="label-dedupe-group">
+                            <label>
+                                <input type="checkbox" id="dedupe-labels" checked style="width: auto; margin-right: 8px;">
+                                Dedupe nearby same labels
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="color-by-label" checked style="width: auto; margin-right: 8px;">
+                                Color leaves by label
+                            </label>
+                        </div>
+
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #4ecdc4;"></div>
+                                <span>Leaf</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #e94560;"></div>
+                                <span>Internal</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Collapsible: Statistics -->
+                <div class="collapsible-section collapsed">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <h4>Tree Statistics</h4>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="stat-row">
+                            <span class="stat-label">Total Nodes</span>
+                            <span class="stat-value" id="stat-total">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Leaf Nodes</span>
+                            <span class="stat-value" id="stat-leaves">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Max Depth</span>
+                            <span class="stat-value" id="stat-depth">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collapsible: Node Details -->
+                <div class="collapsible-section collapsed">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <h4>Node Details</h4>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="node-info">
+                        <p style="color: #666; font-size: 0.85em;">Hover over a node to see details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="main">
+            <div id="loading">
+                <div class="spinner"></div>
+                <div>Loading full tree...</div>
+                <div style="font-size: 0.85em; color: #888; margin-top: 10px;">This may take a moment</div>
+            </div>
+            <svg id="visualization"></svg>
+            <div class="tooltip" id="tooltip"></div>
+
+            <div id="help-overlay">
+                <kbd>Ctrl</kbd>+<kbd>Scroll</kbd> to zoom<br>
+                <kbd>Drag</kbd> to pan<br>
+                <kbd>Click</kbd> node to see articles
+            </div>
+
+            <div id="zoom-controls">
+                <button onclick="zoomIn()" title="Zoom In">+</button>
+                <button onclick="zoomOut()" title="Zoom Out">-</button>
+                <button onclick="resetZoom()" title="Reset">R</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let svg, g, zoom, root, treeData;
+        let clusterMapping = {};
+        let articlesIndex = {};
+        let currentRadius = 1500;
+        let nodeSize = 1;
+        let lineWidth = 0.3;
+        let showLabels = true;
+        let labelSkip = 10;
+        let labelFontSize = 4;
+        let dedupeLabels = true;
+        let colorByLabel = true;
+        let leafColorMap = {};
+        let selectedNode = null;
+        let displayedArticlesCount = 0;
+        const ARTICLES_PER_PAGE = 10;
+
+        // Configuration - paths relative to website folder
+        const config = {
+            datasets: {
+                'aub-scholarworks': {
+                    tree: 'data/aub-scholarworks-tree.json',
+                    mapping: 'data/aub-scholarworks-mapping.json',
+                    articles: 'data/aub-scholarworks-articles.json'
+                },
+                '20-newsgroups': {
+                    tree: 'data/20-newsgroups-tree.json',
+                    mapping: 'data/20-newsgroups-mapping.json',
+                    articles: 'data/20-newsgroups-articles.json'
+                },
+                'theses-sampled': {
+                    tree: 'data/theses-sampled-tree.json',
+                    mapping: 'data/theses-sampled-mapping.json',
+                    articles: 'data/theses-sampled-articles.json'
+                },
+            }
+        };
+
+        // Color scale for depth
+        const depthColors = d3.scaleSequential(d3.interpolateViridis)
+            .domain([0, 110]);
+
+        // Color palette for leaf labels
+        const leafColorPalette = [
+            '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+            '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
+            '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000',
+            '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9'
+        ];
+
+        // Toggle sidebar collapse
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        // Toggle collapsible sections
+        function toggleCollapsible(header) {
+            const section = header.parentElement;
+            section.classList.toggle('collapsed');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initVisualization();
+            loadDataset('aub-scholarworks');
+
+            // Event listeners
+            document.getElementById('dataset-select').addEventListener('change', (e) => {
+                loadDataset(e.target.value);
+            });
+
+            document.getElementById('radius-slider').addEventListener('input', (e) => {
+                currentRadius = parseInt(e.target.value);
+                document.getElementById('radius-value').textContent = currentRadius + 'px';
+            });
+
+            document.getElementById('radius-slider').addEventListener('change', () => {
+                drawTree();
+            });
+
+            document.getElementById('node-slider').addEventListener('input', (e) => {
+                nodeSize = parseFloat(e.target.value);
+                document.getElementById('node-value').textContent = nodeSize + 'px';
+                updateNodeSizes();
+            });
+
+            document.getElementById('line-slider').addEventListener('input', (e) => {
+                lineWidth = parseFloat(e.target.value);
+                document.getElementById('line-value').textContent = lineWidth + 'px';
+                updateLineWidths();
+            });
+
+            document.getElementById('show-labels').addEventListener('change', (e) => {
+                showLabels = e.target.checked;
+                const display = showLabels ? 'block' : 'none';
+                document.getElementById('label-skip-group').style.display = display;
+                document.getElementById('label-font-group').style.display = display;
+                document.getElementById('label-dedupe-group').style.display = display;
+                updateLabels();
+            });
+
+            document.getElementById('label-skip-slider').addEventListener('input', (e) => {
+                labelSkip = parseInt(e.target.value);
+                const skipText = labelSkip === 1 ? '1 (all)' : labelSkip;
+                document.getElementById('label-skip-value').textContent = skipText;
+                updateLabels();
+            });
+
+            document.getElementById('label-font-slider').addEventListener('input', (e) => {
+                labelFontSize = parseInt(e.target.value);
+                document.getElementById('label-font-value').textContent = labelFontSize + 'px';
+                updateLabels();
+            });
+
+            document.getElementById('dedupe-labels').addEventListener('change', (e) => {
+                dedupeLabels = e.target.checked;
+                updateLabels();
+            });
+
+            document.getElementById('color-by-label').addEventListener('change', (e) => {
+                colorByLabel = e.target.checked;
+                updateLeafColors();
+            });
+        });
+
+        function initVisualization() {
+            const container = document.getElementById('main');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            svg = d3.select('#visualization')
+                .attr('width', width)
+                .attr('height', height);
+
+            zoom = d3.zoom()
+                .scaleExtent([0.05, 20])
+                .filter(event => {
+                    if (event.type === 'wheel') {
+                        return event.ctrlKey || event.metaKey;
+                    }
+                    return true;
+                })
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+
+            svg.call(zoom);
+
+            g = svg.append('g')
+                .attr('transform', `translate(${width/2},${height/2})`);
+
+            window.addEventListener('resize', debounce(() => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                svg.attr('width', w).attr('height', h);
+            }, 250));
+        }
+
+        function loadDataset(name) {
+            const dataset = config.datasets[name];
+            if (!dataset) return;
+
+            document.getElementById('loading').style.display = 'block';
+
+            // Reset articles panel and selected cluster
+            selectedNode = null;
+            displayedArticlesCount = 0;
+            document.getElementById('articles-panel').innerHTML =
+                '<h3>Articles <span class="article-count"></span></h3><p class="no-articles">Click on a node in the tree to see its articles</p>';
+            document.getElementById('selected-cluster').style.display = 'none';
+
+            Promise.all([
+                fetch(dataset.tree).then(r => r.json()),
+                fetch(dataset.mapping).then(r => r.json()).catch(() => ({})),
+                fetch(dataset.articles).then(r => r.json()).catch(() => [])
+            ])
+            .then(([tree, mapping, articles]) => {
+                clusterMapping = mapping;
+                // Convert articles to index by id for fast lookup
+                articlesIndex = {};
+                if (Array.isArray(articles)) {
+                    articles.forEach(article => {
+                        articlesIndex[article.id] = article;
+                    });
+                } else if (typeof articles === 'object') {
+                    articlesIndex = articles;
+                }
+                console.log(`Loaded ${Object.keys(articlesIndex).length} articles`);
+                treeData = tree;
+                initTree(tree);
+                document.getElementById('loading').style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loading').innerHTML =
+                    `<p style="color: #e94560;">Error: ${error.message}</p>`;
+            });
+        }
+
+        function initTree(data) {
+            root = d3.hierarchy(data, d => d.children);
+
+            // Calculate stats
+            let totalNodes = 0;
+            let leafNodes = 0;
+            let maxDepth = 0;
+
+            root.each(d => {
+                totalNodes++;
+                maxDepth = Math.max(maxDepth, d.depth);
+                if (!d.children) leafNodes++;
+            });
+
+            document.getElementById('stat-total').textContent = totalNodes.toLocaleString();
+            document.getElementById('stat-leaves').textContent = leafNodes.toLocaleString();
+            document.getElementById('stat-depth').textContent = maxDepth;
+
+            drawTree();
+        }
+
+        function drawTree() {
+            g.selectAll('*').remove();
+
+            const cluster = d3.cluster()
+                .size([360, currentRadius])
+                .separation((a, b) => 1);
+
+            cluster(root);
+
+            const linkRadial = d3.linkRadial()
+                .angle(d => d.x * Math.PI / 180)
+                .radius(d => d.y);
+
+            buildLeafColorMap();
+
+            g.selectAll('.link')
+                .data(root.links())
+                .join('path')
+                .attr('class', 'link')
+                .attr('d', linkRadial)
+                .style('stroke', d => depthColors(d.target.depth))
+                .style('stroke-width', lineWidth + 'px');
+
+            const node = g.selectAll('.node')
+                .data(root.descendants())
+                .join('g')
+                .attr('class', d => d.children ? 'node internal' : 'node leaf')
+                .attr('transform', d => `rotate(${d.x - 90}) translate(${d.y},0)`)
+                .on('mouseover', showTooltip)
+                .on('mouseout', hideTooltip)
+                .on('click', handleNodeClick)
+                .style('cursor', 'pointer');
+
+            node.append('circle')
+                .attr('r', d => d.children ? nodeSize * 0.8 : nodeSize)
+                .style('fill', d => getNodeColor(d));
+
+            updateLabels();
+            fitToViewport();
+        }
+
+        function fitToViewport() {
+            const container = document.getElementById('main');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            const treeDiameter = currentRadius * 2;
+            const padding = 50;
+            const scale = Math.min(
+                (width - padding * 2) / treeDiameter,
+                (height - padding * 2) / treeDiameter
+            );
+
+            const transform = d3.zoomIdentity
+                .translate(width / 2, height / 2)
+                .scale(scale);
+
+            svg.call(zoom.transform, transform);
+        }
+
+        function getLeafLabel(d) {
+            const nodeName = d.data.name || '';
+            const cleanName = nodeName.replace(/_+$/, '').replace(/\s+$/, '');
+            const mapping = clusterMapping[nodeName] || clusterMapping[cleanName];
+            return mapping?.label || cleanName.replace(/_/g, ' ');
+        }
+
+        function buildLeafColorMap() {
+            leafColorMap = {};
+            let colorIndex = 0;
+
+            const leaves = root.leaves();
+
+            leaves.forEach(d => {
+                const label = getLeafLabel(d);
+                if (!(label in leafColorMap)) {
+                    leafColorMap[label] = leafColorPalette[colorIndex % leafColorPalette.length];
+                    colorIndex++;
+                }
+            });
+        }
+
+        function getNodeColor(d) {
+            if (d.children) {
+                return '#e94560';
+            }
+            if (colorByLabel) {
+                const label = getLeafLabel(d);
+                return leafColorMap[label] || '#4ecdc4';
+            }
+            return '#4ecdc4';
+        }
+
+        function updateLeafColors() {
+            g.selectAll('.node.leaf circle')
+                .style('fill', d => getNodeColor(d));
+        }
+
+        function handleNodeClick(event, d) {
+            event.stopPropagation();
+
+            g.selectAll('.node circle').classed('selected-node', false);
+            d3.select(event.currentTarget).select('circle').classed('selected-node', true);
+
+            selectedNode = d;
+            displayedArticlesCount = 0;
+            showArticlesForNode(d);
+        }
+
+        function showArticlesForNode(d) {
+            const panel = document.getElementById('articles-panel');
+            const nodeName = d.data.name || '';
+
+            const cleanName = nodeName.replace(/_+$/, '').replace(/\s+$/, '');
+            const mapping = clusterMapping[nodeName] || clusterMapping[cleanName];
+
+            const displayName = mapping?.label || cleanName.replace(/_/g, ' ');
+
+            const clusterHeader = document.getElementById('selected-cluster');
+            clusterHeader.style.display = 'block';
+            clusterHeader.querySelector('.cluster-name').textContent = displayName;
+
+            let clusterInfo = `Depth: ${d.depth}`;
+            if (mapping && mapping.doc_count) {
+                clusterInfo += ` | ${mapping.doc_count} documents`;
+            }
+            clusterHeader.querySelector('.cluster-info').textContent = clusterInfo;
+
+            let html = '<h3>Articles <span class="article-count"></span></h3>';
+
+            if (!mapping || !mapping.article_ids || mapping.article_ids.length === 0) {
+                html += `<p class="no-articles">No articles linked to this cluster</p>`;
+                panel.innerHTML = html;
+                return;
+            }
+
+            const articleIds = mapping.article_ids;
+            const totalArticles = articleIds.length;
+            const endIndex = Math.min(displayedArticlesCount + ARTICLES_PER_PAGE, totalArticles);
+
+            html = `<h3>Articles <span class="article-count">(${totalArticles})</span></h3>`;
+            html += `<div id="articles-list">`;
+
+            for (let i = displayedArticlesCount; i < endIndex; i++) {
+                const articleId = articleIds[i];
+                const article = articlesIndex[articleId];
+
+                if (article) {
+                    html += renderArticleItem(article, articleId);
+                }
+            }
+
+            html += '</div>';
+
+            if (endIndex < totalArticles) {
+                html += `<button class="load-more-btn" onclick="loadMoreArticles()">
+                    Load more (${endIndex}/${totalArticles})
+                </button>`;
+            }
+
+            panel.innerHTML = html;
+            displayedArticlesCount = endIndex;
+        }
+
+        function loadMoreArticles() {
+            if (!selectedNode) return;
+
+            const nodeName = selectedNode.data.name || '';
+            const cleanName = nodeName.replace(/_+$/, '').replace(/\s+$/, '');
+            const mapping = clusterMapping[nodeName] || clusterMapping[cleanName];
+            if (!mapping || !mapping.article_ids) return;
+
+            const articleIds = mapping.article_ids;
+            const totalArticles = articleIds.length;
+            const startIndex = displayedArticlesCount;
+            const endIndex = Math.min(startIndex + ARTICLES_PER_PAGE, totalArticles);
+
+            const listContainer = document.getElementById('articles-list');
+
+            let newHtml = '';
+            for (let i = startIndex; i < endIndex; i++) {
+                const articleId = articleIds[i];
+                const article = articlesIndex[articleId];
+
+                if (article) {
+                    newHtml += renderArticleItem(article, articleId);
+                }
+            }
+
+            listContainer.insertAdjacentHTML('beforeend', newHtml);
+            displayedArticlesCount = endIndex;
+
+            const loadMoreBtn = document.querySelector('.load-more-btn');
+            if (endIndex < totalArticles) {
+                loadMoreBtn.textContent = `Load more (${endIndex}/${totalArticles})`;
+            } else {
+                loadMoreBtn.remove();
+            }
+        }
+
+        function renderArticleItem(article, articleId) {
+            const category = article.annotation || 'Unknown';
+            const title = article.title || '';
+            const authors = article.authors || '';
+            const content = article.content || 'No content available';
+            const displayContent = content.length > 200 ? content.substring(0, 200) + '...' : content;
+            const date = article.date || '';
+            const doi = article.doi || '';
+
+            let html = `<div class="article-item">`;
+            html += `<div class="article-category">${escapeHtml(category)}</div>`;
+
+            if (title) {
+                html += `<div class="article-title">${escapeHtml(title)}</div>`;
+            }
+            if (authors) {
+                const authorList = authors.split('||').slice(0, 3).join(', ');
+                html += `<div class="article-authors">${escapeHtml(authorList)}${authors.split('||').length > 3 ? ' et al.' : ''}</div>`;
+            }
+            if (date) {
+                html += `<div class="article-date">${escapeHtml(date)}</div>`;
+            }
+
+            html += `<div class="article-content">${escapeHtml(displayContent)}</div>`;
+
+            if (doi) {
+                html += `<div class="article-doi"><a href="${escapeHtml(doi)}" target="_blank" style="color: #4ecdc4;">DOI</a></div>`;
+            }
+
+            html += `<div class="article-id">ID: ${articleId}</div>`;
+            html += `</div>`;
+
+            return html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateNodeSizes() {
+            g.selectAll('.node circle')
+                .attr('r', function() {
+                    const d = d3.select(this.parentNode).datum();
+                    return d.children ? nodeSize * 0.8 : nodeSize;
+                });
+        }
+
+        function updateLineWidths() {
+            g.selectAll('.link')
+                .style('stroke-width', lineWidth + 'px');
+        }
+
+        function updateLabels() {
+            g.selectAll('.node-label').remove();
+
+            if (!showLabels) return;
+
+            const leaves = root.leaves();
+
+            let labelsToShow = [];
+            let lastShownLabel = null;
+
+            leaves.forEach((d, i) => {
+                if (i % labelSkip !== 0) return;
+
+                const displayName = getLeafLabel(d);
+
+                if (dedupeLabels && displayName === lastShownLabel) {
+                    return;
+                }
+
+                lastShownLabel = displayName;
+                labelsToShow.push({ d, displayName });
+            });
+
+            labelsToShow.forEach(({ d, displayName }) => {
+                const angle = d.x - 90;
+                const radius = d.y + 5;
+                const labelColor = colorByLabel ? (leafColorMap[displayName] || '#ccc') : '#ccc';
+
+                g.append('text')
+                    .attr('class', 'node-label')
+                    .attr('transform', `rotate(${angle}) translate(${radius},0) rotate(${angle > 90 || angle < -90 ? 180 : 0})`)
+                    .attr('text-anchor', angle > 90 || angle < -90 ? 'end' : 'start')
+                    .attr('dy', '0.35em')
+                    .style('font-size', labelFontSize + 'px')
+                    .style('fill', labelColor)
+                    .text(displayName.length > 25 ? displayName.substring(0, 25) + '...' : displayName);
+            });
+        }
+
+        function showTooltip(event, d) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+
+            const nodeName = d.data.name || 'unnamed';
+            const mapping = clusterMapping[nodeName];
+
+            let content = `<strong>${nodeName}</strong><br>`;
+            content += `Depth: ${d.depth}<br>`;
+
+            if (mapping) {
+                content += `Documents: ${mapping.doc_count}<br>`;
+                if (mapping.annotations && Object.keys(mapping.annotations).length > 0) {
+                    const topCat = Object.entries(mapping.annotations)
+                        .sort((a, b) => b[1] - a[1])[0];
+                    const pct = Math.round(100 * topCat[1] / mapping.doc_count);
+                    content += `<span style="color: #4ecdc4;">Top: ${topCat[0]} (${pct}%)</span>`;
+                }
+            } else if (d.data.doc_count) {
+                content += `Documents: ${d.data.doc_count}`;
+            }
+
+            tooltip.innerHTML = content;
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 10) + 'px';
+
+            updateNodeInfo(d);
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        function updateNodeInfo(d) {
+            const container = document.getElementById('node-info');
+            const nodeName = d.data.name || '';
+            const mapping = clusterMapping[nodeName];
+
+            let html = '';
+
+            html += `<div class="info-item">
+                <div class="info-label">Name</div>
+                <div class="info-value">${nodeName || 'unnamed'}</div>
+            </div>`;
+
+            html += `<div class="info-item">
+                <div class="info-label">Depth</div>
+                <div class="info-value">${d.depth}</div>
+            </div>`;
+
+            if (mapping) {
+                html += `<div class="info-item">
+                    <div class="info-label">Documents</div>
+                    <div class="info-value">${mapping.doc_count}</div>
+                </div>`;
+
+                if (mapping.annotations && Object.keys(mapping.annotations).length > 0) {
+                    html += `<div class="info-item">
+                        <div class="info-label">Categories</div>
+                        <div class="info-value">`;
+
+                    const sorted = Object.entries(mapping.annotations)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5);
+
+                    for (const [ann, count] of sorted) {
+                        const pct = Math.round(100 * count / mapping.doc_count);
+                        html += `<div style="margin: 3px 0; padding: 3px 6px; background: #0f3460; border-radius: 3px; font-size: 0.85em;">
+                            <span style="color: #4ecdc4;">${ann}</span>
+                            <span style="float: right; color: #888;">${pct}%</span>
+                        </div>`;
+                    }
+                    html += `</div></div>`;
+                }
+
+                if (mapping.cluster_file) {
+                    html += `<div class="info-item">
+                        <div class="info-label">Cluster File</div>
+                        <div class="info-value" style="font-family: monospace; font-size: 0.8em;">${mapping.cluster_file}</div>
+                    </div>`;
+                }
+            }
+
+            if (d.children) {
+                html += `<div class="info-item">
+                    <div class="info-label">Children</div>
+                    <div class="info-value">${d.children.length}</div>
+                </div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function zoomIn() {
+            svg.transition().duration(300).call(zoom.scaleBy, 1.5);
+        }
+
+        function zoomOut() {
+            svg.transition().duration(300).call(zoom.scaleBy, 0.67);
+        }
+
+        function resetZoom() {
+            const container = document.getElementById('main');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            const treeDiameter = currentRadius * 2;
+            const padding = 50;
+            const scale = Math.min(
+                (width - padding * 2) / treeDiameter,
+                (height - padding * 2) / treeDiameter
+            );
+
+            svg.transition().duration(500).call(
+                zoom.transform,
+                d3.zoomIdentity.translate(width/2, height/2).scale(scale)
+            );
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func(...args), wait);
+            };
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && (event.key === '+' || event.key === '=')) {
+                event.preventDefault();
+                zoomIn();
+            }
+            if ((event.ctrlKey || event.metaKey) && (event.key === '-' || event.key === '_')) {
+                event.preventDefault();
+                zoomOut();
+            }
+            if ((event.ctrlKey || event.metaKey) && event.key === '0') {
+                event.preventDefault();
+                resetZoom();
+            }
+        });
+    </script>
+</body>
+</html>
