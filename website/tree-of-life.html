@@ -212,7 +212,8 @@
 
         <label>Dataset</label>
         <select id="dataset-select">
-            <option value="aub-scholarworks">AUB ScholarWorks</option>
+	    <option value="tuwien-scholarworks">TU Wien ScholarWorks</option>
+	    <option value="aub-scholarworks">AUB ScholarWorks</option>
             <option value="20-newsgroups">20 Newsgroups</option>
             <option value="theses-sampled">French Theses (Sample)</option>
         </select>
@@ -255,11 +256,15 @@
     <script>
         let treeData, clusterMapping;
         let svg, g, zoom;
-        let currentDataset = 'aub-scholarworks';
+        let currentDataset = 'tuwien-scholarworks';
 
         // Configuration - paths relative to website folder
         const config = {
             datasets: {
+		'tuwien-scholarworks':{
+		    tree: 'data/tuwien-tree.json',
+		    mapping: 'data/tuwien-mapping.json'
+		},
                 'aub-scholarworks': {
                     tree: 'data/aub-scholarworks-tree.json',
                     mapping: 'data/aub-scholarworks-mapping.json'
@@ -285,7 +290,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            loadDataset('aub-scholarworks');
+            loadDataset('tuwien-scholarworks');
 
             document.getElementById('dataset-select').addEventListener('change', (e) => {
                 loadDataset(e.target.value);

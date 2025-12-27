@@ -24,6 +24,7 @@ Three datasets are included in `data/`:
 
 | Dataset | Description | Size |
 |---------|-------------|------|
+| TU Wien ScholarWorks | Academic publications from TU Wien | ~30k docs |
 | AUB ScholarWorks | Academic publications from AUB | ~15k docs |
 | 20 Newsgroups | Classic text classification dataset | ~20k docs |
 | French Theses (Sample) | Sampled branch from French thesis corpus | ~3k docs |

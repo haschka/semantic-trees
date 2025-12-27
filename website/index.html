@@ -496,6 +496,7 @@
                     <div class="control-group">
                         <label>Dataset</label>
                         <select id="dataset-select">
+			    <option value="tuwien-scholarworks">TU Wien ScholarWorks</option>
                             <option value="aub-scholarworks">AUB ScholarWorks</option>
                             <option value="20-newsgroups">20 Newsgroups</option>
                             <option value="theses-sampled">French Theses (Sample)</option>
@@ -666,6 +667,11 @@
         // Configuration - paths relative to website folder
         const config = {
             datasets: {
+		'tuwien-scholarworks':{
+		    tree: 'data/tuwien-tree.json',
+		    mapping: 'data/tuwien-mapping.json',
+		    articles: 'data/tuwien-articles.json'
+		},
                 'aub-scholarworks': {
                     tree: 'data/aub-scholarworks-tree.json',
                     mapping: 'data/aub-scholarworks-mapping.json',
