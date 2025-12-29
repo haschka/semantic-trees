@@ -2,11 +2,20 @@
 
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage[utf8]{inputenc}
 
 \author {
-  Thomas Haschka \and Joseph Bakarji
+  Thomas Haschka$^1$ \\ thomas.haschka@tuwien.ac.at  \and Joseph Bakarji$^2$ \\ jb50@aub.edu.lb 
   }
 
+\date{
+$^1$ E020-04 Service Unit of High Performance Computing, DataLab,
+Campus IT, \\ Technische Universität Wien, Operngasse 11, Vienna, 1040,
+Vienna, Austria \\
+$^2$ Department of Mechanical Engineering, American University of Beirut,\\
+P.O. Box 11-0236, Riad El-Solh, Beirut, 1107 2020, Beirut, Lebanon. \\[2ex]
+\today
+}
 %% Affiliation:
 % Department of Mechanical Engineering
 
@@ -808,7 +817,7 @@ on predefined categories.
   to the tree as outliers before joining the main structure.
   
   The full tree is shown in Figure \ref{fig-aub-tree} and can be explored
-  in detail using our interactive tree viewer at \url{http://}. As in the
+  in detail using our interactive tree viewer at \url{https://genealogy.sematlas.com/}. As in the
   other figures, color intensity is logarithmically scaled from white (no
   articles in the branch) to black (all articles in the dataset).
   
@@ -836,7 +845,7 @@ on predefined categories.
 
   The TU Wien tree is shown in Figure \ref{fig-tuwien-tree}, and an
   interactive exploration is available through our tree viewer at
-  \url{http://}. As with the AUB tree, color intensity follows a
+  \url{https://genealogy.sematlas.com/}. As with the AUB tree, color intensity follows a
   logarithmic scale from white (no articles) to black (all articles in the
   dataset).
 
@@ -913,7 +922,7 @@ these are rather arbitrarily chosen and unstandarized. We transcribed
 these labels first into a binary annotation of either being part of
 natural sciences or humanities. To our surprise the theses abstracts
 of labeled humanities formed a clear subtree in our tree. Encouraged by
-these findings we progressed to transcribe the ``discipine'' labels
+these findings we progressed to transcribe the ``discipline'' labels
 into the OECD FOS annotation. We colored the tree according to it and
 found thanks to the hierarchical structure that engineering and medical
 sciences merge earlier than either social sciences or humanities. A
@@ -989,7 +998,7 @@ complex tree structures.
 
 \subsection{Limitations and Future Directions}
 
-The inferred trees are inherently constrained by the representational
+Inferred trees are inherently constrained by the representational
 capacity of the embedding models. Semantic dimensions that are weakly
 encoded, such as fine-grained sentiment or subtle disciplinary
 distinctions, cannot be reliably recovered through clustering alone.
@@ -1022,6 +1031,15 @@ existing classification systems. By enabling data-driven,
 multi-resolution representations of textual domains, this approach
 offers new opportunities for research assessment, knowledge mapping,
 and other exploratory analysis.
+
+\section*{Acknowledgments}
+TH thanks the TU Wien Campus IT - Datalab - AI Team and EuroCC Austria for supporting this research.  
+JB thanks the Center for Advanced Mathematical Sciences (CAMS) and the Artificial Intelligence, Data Science and Computing Hub (AI-DSC), for supporting this research.
+
+We also thank the TU Wien Service Unit for Research Information Systems for providing the TU Wien dataset, the library of the American University of Beirut for providing the AUB dataset and Austrian Scientific Computing (ASC) for granting early access to the MUSICA supercomputing infrastructure: \newline \url{https://asc.ac.at}
+
+\section*{Code and Data Availability}
+Code, TU Wien and AUB Datasets are available on github: \newline \url{https://github.com/haschka/semantic-trees}
 
 \bibliographystyle{ieeetr}
 \bibliography{bib}
