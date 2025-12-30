@@ -4,6 +4,9 @@ This repository contains code to build **hierarchical semantic trees**
 from text datasets. The code works in conjunction with
 [MNHN-Tree-Tools](https://treetools.haschka.net/).
 
+If you make use of the code and/or datasets herein, please cite:
+[Semantic Tree Inference on Text Corpa using a Nested Density Approach together with Large Language Model Embeddings](https://doi.org/10.48550/arXiv.2512.23471)
+
 ---
 
 ## Installation
