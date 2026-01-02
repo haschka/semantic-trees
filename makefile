@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-O2 -march=arrowlake-s -mabm -mno-cldemote -mno-kl -mno-pconfig -mno-sgx -mno-widekl -mshstk -mwbnoinvd --param=l1-cache-line-size=64 --param=l1-cache-size=32 --param=l2-cache-size=30720 -ftree-vectorize -fomit-frame-pointer -Wno-unused-result -flto
-#CFLAGS=-O2 -g -march=native -ftree-vectorize -fomit-frame-pointer -Wno-unused-result -flto
+#CFLAGS=-O2 -march=arrowlake-s -mabm -mno-cldemote -mno-kl -mno-pconfig -mno-sgx -mno-widekl -mshstk -mwbnoinvd --param=l1-cache-line-size=64 --param=l1-cache-size=32 --param=l2-cache-size=30720 -ftree-vectorize -fomit-frame-pointer -Wno-unused-result -flto
+CFLAGS=-O2 -g -march=native -ftree-vectorize -fomit-frame-pointer -Wno-unused-result -flto
 #CFLAGS=-g -mavx2 -mfma 
 
 MATH=-lm
