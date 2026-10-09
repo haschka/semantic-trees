@@ -1,6 +1,6 @@
 CC=gcc
-#CFLAGS=-O2 -march=arrowlake-s -mabm -mno-cldemote -mno-kl -mno-pconfig -mno-sgx -mno-widekl -mshstk -mwbnoinvd --param=l1-cache-line-size=64 --param=l1-cache-size=32 --param=l2-cache-size=30720 -ftree-vectorize -fomit-frame-pointer -Wno-unused-result -flto
-CFLAGS=-O2 -g -march=native -ftree-vectorize -fomit-frame-pointer -Wno-unused-result -flto
+CFLAGS=-O2 -march=arrowlake-s -mabm -mno-cldemote -mno-kl -mno-pconfig -mno-sgx -mno-widekl -mshstk -mwbnoinvd --param=l1-cache-line-size=64 --param=l1-cache-size=32 --param=l2-cache-size=30720 -ftree-vectorize -fomit-frame-pointer -Wno-unused-result -flto
+#CFLAGS=-O2 -g -march=native -ftree-vectorize -fomit-frame-pointer -Wno-unused-result -flto
 #CFLAGS=-g -mavx2 -mfma 
 
 MATH=-lm
@@ -14,6 +14,7 @@ all: bin/create-tokenizer bin/build-vector-db bin/build-vector-db-from-server \
      bin/rag-with-vdb-yule bin/beir-corpus-test bin/embedding-from-server-cli \
      bin/rag-conversation bin/rag-with-vdb-cos-client \
      bin/build-vector-db-theses bin/build-theses-vector-db-from-server \
+     bin/build-article-vertor-db-from-server \
      bin/adaptive-text-cos bin/adaptive-text-yule \
      bin/show-vdb-details bin/print-vdb-distances \
      bin/pca-from-vdb bin/print-vdb-entry bin/print-vdb-texts \
@@ -130,6 +131,19 @@ bin/build-theses-vector-db-from-server: build-theses-vector-db-from-server.c \
  embedding-from-server.o local_resolve.o curl_helpers.o \
  vector-db.o binary_array.o load-texts.o \
  -o bin/build-theses-vector-db-from-server $(JSON) $(CURL) $(MATH)
+
+bin/build-article-vertor-db-from-server: build-article-vector-db-from-server.c \
+                                         embedding-from-server.o \
+                                         embedding-from-server.h \
+                                         local_resolve.o local_resolve.h \
+                                         curl_helpers.o curl_helpers.h \
+					 vector-db.h vector-db.o \
+					 binary_array.h binary_array.o \
+					 load-texts.o load-texts.h
+	$(CC) $(CFLAGS) build-article-vector-db-from-server.c \
+ embedding-from-server.o local_resolve.o curl_helpers.o \
+ vector-db.o binary_array.o load-texts.o \
+ -o bin/build-article-vector-db-from-server $(JSON) $(CURL) $(MATH)
 
 bin/show-vdb-details: get-vdb-details.c \
                       vector-db.h vector-db.o binary_array.o binary_array.h 
